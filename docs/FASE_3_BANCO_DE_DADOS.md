@@ -8,11 +8,11 @@
 
 ### Coleções
 
-O banco utiliza as coleções `usuarios`, `documentos`, `versoes`, `pastas`, `etiquetas`, `sessoes`, `eventos` e `notificacoes`. A aplicação mantém os nomes em um único catálogo para evitar divergência entre código e documentação.
+O banco utiliza as coleções `usuarios`, `documentos`, `versoes`, `pastas`, `etiquetas`, `sessoes`, `eventos` e `notificacoes`. O bootstrap materializa todas as coleções para que a estrutura inicial do banco seja verificável desde a primeira inicialização.
 
 ### Conexão
 
-A conexão usa PyMongo Async e recebe a URI por variável de ambiente. O nome do banco é configurado separadamente como `KZDocs`, evitando credenciais e endpoints no código. A documentação oficial do MongoDB recomenda uma URI de conexão e um cliente PyMongo; para aplicações assíncronas, a documentação atual apresenta `AsyncMongoClient`. citeturn0search0turn0search2
+A conexão usa PyMongo Async e recebe a URI por variável de ambiente. O nome do banco é configurado separadamente como `KZDocs`, evitando credenciais e endpoints no código.
 
 ### Índices
 
@@ -20,28 +20,20 @@ Foram definidos índices iniciais para identidade de usuário, propriedade e atu
 
 ### Referências e integridade
 
-Os vínculos são mantidos por identificadores (`owner_id`, `user_id`, `document_id`, `parent_id`) e as regras de integridade ficam na camada de serviço/validação. MongoDB não recebe dependências de esquema relacional que limitem a evolução do produto.
+Os vínculos são mantidos por identificadores (`owner_id`, `user_id`, `document_id`, `parent_id`) e regras de integridade ficam na camada de validação/serviço. Os modelos Pydantic representam os contratos de dados da aplicação.
 
 ### Dados iniciais
 
-O seed não cria usuários nem credenciais. Ele grava somente um marcador `system.bootstrap` em `eventos`, registrando a inicialização das coleções. Isso evita criar uma conta administrativa insegura durante o bootstrap.
-
-### Backup e recuperação
-
-Foram criados scripts de backup e restauração com `mongodump` e `mongorestore`. As credenciais permanecem fora do repositório.
-
-### Validação
-
-A suíte da Fase 3 valida a configuração, o catálogo de coleções, os índices, o bootstrap/seed e os scripts sem exigir uma credencial real no CI. A validação contra um deployment MongoDB real depende da configuração de `MONGODB_URI` no ambiente de execução.
-
-### Modelos e integridade
-
-Os contratos de dados da aplicação estão definidos em modelos Pydantic para usuários, documentos, versões, pastas, etiquetas, sessões, eventos e notificações. Regras adicionais garantem referências obrigatórias, propriedade de documentos, hierarquia de pastas e numeração válida de versões.
+O seed não cria usuários nem credenciais. Ele grava somente um marcador `system.bootstrap` em `eventos`, registrando a inicialização. Isso evita criar uma conta administrativa insegura durante o bootstrap.
 
 ### Evolução do banco
 
-A versão inicial de migração é registrada na coleção `migrations`, permitindo evoluir a estrutura de dados sem depender de alterações manuais não rastreadas.
+A versão de migração é registrada em `migrations`, permitindo evoluir a estrutura por versões rastreáveis.
 
-### Backup e restauração verificáveis
+### Backup e recuperação
 
-Os comandos de backup/restauração também possuem cobertura automatizada para garantir que os executáveis e namespaces corretos sejam utilizados. A recuperação física de um dump requer as ferramentas `mongodump` e `mongorestore` no ambiente de execução.
+Foram implementados `mongodump` e `mongorestore`. A integração automatizada executa um ciclo real: grava um marcador, gera um dump, remove o marcador, restaura o dump e confirma que o registro voltou ao banco.
+
+### Validação
+
+A Fase 3 possui testes unitários para modelos, integridade e comandos de backup, além de teste de integração com MongoDB que valida bootstrap, materialização das coleções, índices, seed e recuperação física de backup. O workflow instala as ferramentas necessárias e executa essa integração em um serviço MongoDB isolado.
