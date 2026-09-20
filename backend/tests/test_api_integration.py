@@ -48,6 +48,8 @@ async def test_api_end_to_end() -> None:
     assert client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"name": "Documento atualizado"}).status_code == 200
     assert client.post(f"/api/v1/documents/{document_id}/versions", headers=headers, json={"content": "v2"}).status_code == 201
     assert client.get(f"/api/v1/documents/{document_id}/versions", headers=headers).status_code == 200
+    versions = client.get(f"/api/v1/documents/{document_id}/versions", headers=headers).json()
+    assert client.post(f"/api/v1/documents/{document_id}/versions/{versions[0]['id' ]}/restore", headers=headers, json={}).status_code == 200
 
     assert client.post(f"/api/v1/documents/{document_id}/open", headers=headers).status_code == 200
     assert client.get("/api/v1/recent", headers=headers).status_code == 200
@@ -68,7 +70,8 @@ async def test_api_end_to_end() -> None:
 
     assert client.get(f"/api/v1/permissions/{document_id}", headers=headers).status_code == 200
 
-    assert client.get("/api/v1/search", headers=headers, params={"q": "Documento"}).status_code == 200
+    assert client.get("/api/v1/search", headers=headers, params={"q": "Documento", "sort": "name_asc"}).status_code == 200
+    assert client.get("/api/v1/search", headers=headers, params={"status_filter": "active", "date_from": "2026-01-01", "date_to": "2026-12-31"}).status_code == 200
     assert client.get("/api/v1/audit", headers=headers).status_code == 200
     assert client.get("/api/v1/notifications", headers=headers).status_code == 200
 
