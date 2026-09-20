@@ -44,6 +44,7 @@ class UserResponse(ResponseModel):
     email_verified: bool
     phone_verified: bool
     role: str
+    status: str = 'active'
     created_at: datetime
     updated_at: datetime
 
