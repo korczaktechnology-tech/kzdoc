@@ -7,7 +7,5 @@ COLLECTIONS = (
     "sessoes",
     "eventos",
     "notificacoes",
+    "grupos",
 )
-
-# Ordem explícita para que o bootstrap materialize todas as coleções,
-# mesmo antes de existirem registros de negócio.
