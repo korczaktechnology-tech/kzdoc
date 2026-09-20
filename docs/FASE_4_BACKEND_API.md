@@ -87,6 +87,8 @@ A Fase 4 possui:
 
 A Fase 4 é considerada concluída quando o workflow `Fase 4 - Backend API` passa no branch `main`, incluindo os testes unitários/contratuais e o teste de integração com MongoDB real.
 
+**Status atual: concluída e validada.** O workflow da Fase 4 passou integralmente no `main`. A validação cobre o contrato das rotas, autenticação, persistência, isolamento entre usuários, documentos, versões, pastas, etiquetas, favoritos, recentes, lixeira, pesquisa, grupos, permissões, auditoria, notificações e recuperação de sessão. Os workflows das Fases 1, 2 e 3 também estão verdes no mesmo estado do repositório.
+
 ## Observação
 
 A implementação desta fase prepara a superfície de negócio da API. Endurecimentos específicos de segurança, incluindo políticas avançadas de senha, rate limiting, proteção contra abuso, revisão de segredos e demais itens da Fase 5, permanecem deliberadamente na fase correspondente.
