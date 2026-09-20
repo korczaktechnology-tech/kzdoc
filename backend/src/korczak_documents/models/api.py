@@ -6,6 +6,10 @@ class APIModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ResponseModel(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+
 class RegisterRequest(APIModel):
     name: str = Field(min_length=1, max_length=160)
     email: str = Field(min_length=3, max_length=320)
@@ -24,10 +28,9 @@ class RecoveryRequest(APIModel):
 
 class UserUpdateRequest(APIModel):
     name: str | None = Field(default=None, min_length=1, max_length=160)
-    phone: str | None = Field(default=None, max_length=40)
 
 
-class UserResponse(APIModel):
+class UserResponse(ResponseModel):
     id: str
     name: str
     email: str
@@ -39,7 +42,7 @@ class UserResponse(APIModel):
     updated_at: datetime
 
 
-class SessionResponse(APIModel):
+class SessionResponse(ResponseModel):
     token: str
     expires_at: datetime
     user: UserResponse
@@ -59,7 +62,7 @@ class DocumentUpdateRequest(APIModel):
     status: str | None = Field(default=None, min_length=1, max_length=40)
 
 
-class DocumentResponse(APIModel):
+class DocumentResponse(ResponseModel):
     id: str
     owner_id: str
     name: str
@@ -76,7 +79,7 @@ class VersionCreateRequest(APIModel):
     content: str | None = None
 
 
-class VersionResponse(APIModel):
+class VersionResponse(ResponseModel):
     id: str
     document_id: str
     version_number: int
@@ -95,7 +98,7 @@ class FolderUpdateRequest(APIModel):
     parent_id: str | None = None
 
 
-class FolderResponse(APIModel):
+class FolderResponse(ResponseModel):
     id: str
     owner_id: str
     parent_id: str | None
@@ -117,7 +120,7 @@ class PermissionRequest(APIModel):
     actions: list[str] = Field(default_factory=list)
 
 
-class NotificationResponse(APIModel):
+class NotificationResponse(ResponseModel):
     id: str
     user_id: str
     type: str
@@ -126,7 +129,7 @@ class NotificationResponse(APIModel):
     created_at: datetime
 
 
-class PaginatedResponse(APIModel):
+class PaginatedResponse(ResponseModel):
     items: list[dict]
     total: int
     page: int
