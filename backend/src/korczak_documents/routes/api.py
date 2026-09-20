@@ -326,7 +326,8 @@ async def remove_group_member(group_id: str, member_id: str, user=Depends(curren
 @router.get("/permissions/{document_id}")
 async def permissions(document_id: str, user=Depends(current_user)):
     document = await service.document_or_404(document_id, user["id"])
-    return {"document_id": document_id, "owner_id": document["owner_id"], "role": user["role"], "actions": ["read", "write", "delete", "share"]}
+    policy = document.get("permissions") or {"role": user["role"], "actions": ["read", "write", "delete", "share"]}
+    return {"document_id": document_id, "owner_id": document["owner_id"], "role": policy["role"], "actions": policy["actions"]}
 
 
 @router.put("/permissions/{document_id}")
