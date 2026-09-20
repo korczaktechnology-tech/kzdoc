@@ -25,6 +25,35 @@ jobs:
         env:
           MONGODB_DATABASE: KZDocs
 
+  mongodb-integration:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar backend
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+      - name: Testar conexão, bootstrap, índices e recuperação
+        working-directory: backend
+        run: pytest -m integration
+        env:
+          MONGODB_URI: mongodb://localhost:27017
+          MONGODB_DATABASE: KZDocs
+
   frontend:
     runs-on: ubuntu-latest
     steps:
