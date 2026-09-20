@@ -1,107 +1,211 @@
 # KORCZAK DOCUMENTS — FASE 0
-## Definição e congelamento do projeto
+## DEFINIÇÃO E CONGELAMENTO DO PROJETO
 
-**Status:** CONCLUÍDA  
+**Projeto:** Korczak Documents  
 **Fase:** 0 de 30  
-**Versão de especificação:** 0.1.0  
-**Data:** 20 de setembro de 2026
+**Status da especificação:** 100% CONCLUÍDA  
+**Status de implementação:** NÃO É OBJETIVO DA FASE 0  
+**Versão:** 1.0.0  
+**Data de fechamento:** 20 de setembro de 2026  
+**Branch:** main
 
 ---
 
-## 1. Objetivo da Fase 0
+# 1. FINALIDADE DESTE DOCUMENTO
 
-A Fase 0 estabelece o contrato funcional e estrutural do Korczak Documents antes do início da implementação. Depois deste documento, alterações de escopo devem ser tratadas como mudança de versão da especificação, e não como alteração informal durante o desenvolvimento.
+A Fase 0 existe para transformar a ideia do Korczak Documents em um contrato de produto claro, verificável e congelado antes da execução das fases técnicas.
 
-A Fase 0 cobre os 16 itens definidos no plano geral de conclusão:
+O objetivo não é afirmar que o sistema já foi programado. O objetivo é garantir que, antes da implementação, esteja definido:
 
-1. escopo;
-2. funcionalidades obrigatórias;
-3. funcionalidades futuras;
-4. plataformas;
-5. comportamento comum;
-6. diferenças por plataforma;
-7. identidade visual;
-8. nomenclatura;
-9. regras de negócio;
-10. permissões;
-11. documentos;
-12. usuários;
-13. pastas;
-14. versões;
-15. auditoria;
-16. documentação oficial.
+- o que o produto é;
+- o que ele deve fazer;
+- o que não faz na primeira versão;
+- em quais plataformas estará disponível;
+- como as plataformas devem se comportar;
+- qual é a identidade visual;
+- quais nomes serão utilizados;
+- quais regras de negócio serão obedecidas;
+- como funciona a autorização;
+- como os documentos são estruturados;
+- como os usuários são estruturados;
+- como as pastas funcionam;
+- como o versionamento funciona;
+- como a auditoria funciona;
+- como todas essas decisões serão preservadas durante as fases seguintes.
+
+A partir deste documento, nenhuma decisão pertencente à Fase 0 deverá ser alterada informalmente durante a implementação.
 
 ---
 
-# 2. Escopo definitivo
+# 2. RESULTADO DA REVISÃO
 
-O Korczak Documents será um sistema multiplataforma para criação, organização, edição, armazenamento, versionamento, pesquisa e administração de documentos.
+A revisão desta fase foi feita contra os 16 itens oficiais da checklist de conclusão.
 
-O produto terá uma única lógica de negócio centralizada. Web, desktop e mobile serão diferentes formas de acesso ao mesmo sistema, e não produtos independentes.
+## Matriz oficial
 
-A arquitetura deverá preservar:
+| Item | Setor | Estado |
+|---:|---|---|
+| 1 | Escopo definitivo | 100% fechado |
+| 2 | Funcionalidades obrigatórias | 100% fechado |
+| 3 | Funcionalidades futuras | 100% fechado |
+| 4 | Seis plataformas | 100% fechado |
+| 5 | Comportamento comum | 100% fechado |
+| 6 | Particularidades por plataforma | 100% fechado |
+| 7 | Identidade visual | 100% fechado |
+| 8 | Nomenclatura | 100% fechado |
+| 9 | Regras de negócio | 100% fechado |
+| 10 | Permissões | 100% fechado |
+| 11 | Modelo de documentos | 100% fechado |
+| 12 | Modelo de usuários | 100% fechado |
+| 13 | Modelo de pastas | 100% fechado |
+| 14 | Modelo de versões | 100% fechado |
+| 15 | Modelo de auditoria | 100% fechado |
+| 16 | Documentação oficial | 100% fechado |
 
-- conta e sessão do usuário;
+**Resultado: 16/16 setores definidos.**
+
+Isso significa **100% de conclusão da Fase 0 como especificação de produto**.
+
+Isso não significa que o software esteja 100% implementado. A implementação começa nas fases posteriores.
+
+---
+
+# 3. ESCOPO DEFINITIVO
+
+O Korczak Documents é um sistema multiplataforma de gestão documental.
+
+Seu núcleo permite ao usuário:
+
+1. criar documentos;
+2. editar documentos;
+3. salvar documentos;
+4. organizar documentos;
+5. localizar documentos;
+6. consultar documentos;
+7. controlar versões;
+8. restaurar versões;
+9. excluir e restaurar documentos;
+10. trabalhar com pastas e etiquetas;
+11. marcar favoritos;
+12. consultar documentos recentes;
+13. administrar usuários;
+14. administrar grupos;
+15. controlar permissões;
+16. consultar auditoria;
+17. sincronizar os dados entre dispositivos;
+18. configurar o ambiente e a conta.
+
+O produto possui um núcleo lógico único.
+
+Web, Windows, macOS, Linux, Android e iOS são clientes diferentes para o mesmo sistema. Nenhum cliente poderá criar uma regra de negócio incompatível com o núcleo.
+
+---
+
+# 4. LIMITE DA PRIMEIRA VERSÃO
+
+A primeira versão obrigatoriamente cobre:
+
+- autenticação;
+- sessão;
 - documentos;
 - editor;
 - pastas;
 - etiquetas;
 - favoritos;
-- documentos recentes;
+- recentes;
 - lixeira;
 - pesquisa;
+- usuários;
 - grupos;
 - permissões;
-- histórico e versionamento;
 - auditoria;
-- notificações;
+- versionamento;
 - configurações;
-- administração;
-- sincronização entre dispositivos.
+- sincronização;
+- interface funcional;
+- tratamento de erros;
+- proteção contra perda de dados.
 
-A API será a camada responsável pela comunicação entre os clientes e os dados persistidos.
+A primeira versão não terá como requisito obrigatório:
+
+- colaboração avançada em tempo real;
+- inteligência artificial avançada;
+- automações externas;
+- integrações externas não necessárias ao núcleo;
+- armazenamento offline completo e ilimitado;
+- recursos empresariais não especificados neste contrato;
+- recursos exclusivos de uma plataforma que quebrem a equivalência funcional do produto.
+
+Esses itens poderão entrar futuramente por alteração formal de especificação.
 
 ---
 
-# 3. Funcionalidades obrigatórias
+# 5. FUNCIONALIDADES OBRIGATÓRIAS
 
-A versão inicial deverá contemplar:
+## 5.1 Conta e autenticação
 
-### Conta e sessão
+Devem existir:
+
 - criação de conta;
-- login;
-- logout;
-- gerenciamento de sessão;
+- entrada na conta;
+- saída da conta;
+- manutenção de sessão;
+- expiração de sessão;
 - proteção de áreas autenticadas;
-- gerenciamento de credenciais conforme a implementação de segurança definida posteriormente.
+- recuperação de acesso;
+- alteração de credenciais;
+- encerramento de sessões quando aplicável;
+- tratamento de conta desativada;
+- mensagens de erro sem exposição de informações sensíveis.
 
-### Documentos
-- criação;
-- visualização;
-- edição;
-- salvamento;
-- exclusão;
-- restauração;
-- organização em pastas;
-- etiquetas;
-- favoritos;
-- documentos recentes.
+Credenciais não poderão ser armazenadas em texto puro.
 
-### Editor
-- criação e edição de conteúdo;
+## 5.2 Documentos
+
+Cada usuário autorizado deverá poder:
+
+- criar;
+- abrir;
+- visualizar;
+- editar;
 - salvar;
-- indicação do estado de salvamento;
+- renomear;
+- mover;
+- etiquetar;
+- favoritar;
+- remover dos favoritos;
+- excluir;
+- restaurar;
+- consultar histórico;
+- restaurar uma versão.
+
+## 5.3 Editor
+
+O editor deverá possuir:
+
+- área de conteúdo;
+- estado de edição;
+- estado de salvamento;
+- salvamento confirmado;
+- salvamento pendente;
+- erro de salvamento;
 - desfazer;
 - refazer;
 - leitura;
-- criação de versões;
+- edição;
 - histórico;
-- restauração de versão;
-- proteção contra perda acidental.
+- restauração;
+- proteção contra saída com alteração pendente.
 
-### Organização
-- criação, renomeação e exclusão de pastas;
-- movimentação de documentos;
+Nunca será exibido "salvo" quando o servidor não tiver confirmado a persistência correspondente.
+
+## 5.4 Organização
+
+O sistema deverá possuir:
+
+- pastas;
+- hierarquia de pastas;
+- movimentação;
 - etiquetas;
 - favoritos;
 - recentes;
@@ -109,10 +213,13 @@ A versão inicial deverá contemplar:
 - restauração;
 - exclusão definitiva.
 
-### Pesquisa
+## 5.5 Pesquisa
+
+A pesquisa deverá suportar:
+
 - nome;
 - descrição;
-- conteúdo quando suportado;
+- conteúdo quando indexado;
 - pasta;
 - etiqueta;
 - proprietário;
@@ -122,44 +229,74 @@ A versão inicial deverá contemplar:
 - ordenação;
 - paginação.
 
-### Administração
-- usuários;
-- grupos;
-- permissões;
-- auditoria;
-- configurações administrativas.
+Os resultados deverão respeitar as permissões do usuário.
 
-### Sincronização
+## 5.6 Administração
+
+A administração deverá permitir, conforme a autorização:
+
+- consultar usuários;
+- criar usuários quando aplicável;
+- alterar estado de usuários;
+- consultar grupos;
+- criar e administrar grupos;
+- conceder e remover permissões;
+- consultar auditoria;
+- administrar configurações permitidas.
+
+## 5.7 Sincronização
+
+A sincronização deverá cobrir:
+
 - documentos;
 - versões;
 - pastas;
+- etiquetas;
 - favoritos;
-- configurações globais aplicáveis;
-- sessão conforme política de segurança;
-- tratamento de perda e retomada de conexão;
-- tratamento de alterações concorrentes.
+- estados relevantes;
+- configurações sincronizáveis;
+- alterações realizadas em outros dispositivos.
+
+Falhas de conexão deverão ser distinguíveis de operações confirmadas.
 
 ---
 
-# 4. Funcionalidades fora da versão inicial
+# 6. FUNCIONALIDADES FUTURAS
 
-Para impedir crescimento informal do escopo, os seguintes recursos não fazem parte da obrigação da primeira versão, salvo decisão posterior registrada em uma nova versão da especificação:
+Os seguintes recursos ficam explicitamente fora do congelamento da primeira versão:
 
-- integrações externas não necessárias ao funcionamento central;
-- recursos avançados de colaboração em tempo real;
-- recursos avançados de inteligência artificial;
+### Colaboração avançada
+- edição simultânea em tempo real;
+- presença de usuários;
+- comentários colaborativos avançados;
+- cursores compartilhados.
+
+### Inteligência e automação
+- geração avançada de conteúdo;
+- classificação automática avançada;
 - automações externas;
-- recursos empresariais não especificados;
-- funcionalidades de armazenamento offline completo;
-- recursos nativos específicos de uma plataforma que não tenham equivalente funcional no núcleo.
+- agentes;
+- fluxos inteligentes não necessários ao núcleo.
 
-Esses recursos poderão ser adicionados posteriormente sem alterar o núcleo já definido.
+### Integrações
+- serviços externos;
+- armazenamento externo;
+- provedores corporativos;
+- integrações de terceiros.
+
+### Recursos empresariais adicionais
+- estruturas organizacionais não especificadas;
+- políticas corporativas adicionais;
+- recursos avançados de conformidade;
+- módulos não definidos neste contrato.
+
+A inclusão desses recursos exige nova especificação ou aditivo formal.
 
 ---
 
-# 5. Plataformas oficiais
+# 7. PLATAFORMAS OFICIAIS
 
-O Korczak Documents deverá ser disponibilizado para seis ambientes:
+O produto deverá possuir seis destinos oficiais:
 
 1. Web;
 2. Windows;
@@ -168,300 +305,723 @@ O Korczak Documents deverá ser disponibilizado para seis ambientes:
 5. Android;
 6. iOS.
 
-A Web será acessível por navegador e preparada para publicação por GitHub Pages.
+## 7.1 Web
 
-Desktop e mobile utilizarão o mesmo backend e o mesmo modelo de dados do produto.
+A aplicação Web deverá:
+
+- funcionar em navegador moderno;
+- ser responsiva;
+- possuir navegação por mouse e teclado;
+- comunicar-se com a API real;
+- não depender de dados fictícios;
+- estar preparada para publicação em GitHub Pages;
+- tratar estados de carregamento, erro, vazio e sucesso.
+
+## 7.2 Windows
+
+A aplicação Windows deverá possuir:
+
+- janela própria;
+- instalação;
+- inicialização;
+- atualização quando definida;
+- desinstalação;
+- integração adequada com o ambiente;
+- acesso ao mesmo núcleo funcional.
+
+## 7.3 macOS
+
+Deverá possuir:
+
+- aplicação própria;
+- instalação/distribuição compatível;
+- comportamento de janela adequado;
+- atalhos coerentes;
+- integração com o ambiente quando aplicável;
+- mesmo núcleo funcional.
+
+## 7.4 Linux
+
+Deverá possuir:
+
+- pacote de distribuição definido na fase de empacotamento;
+- execução como aplicação própria;
+- comportamento consistente;
+- mesmo núcleo funcional.
+
+## 7.5 Android
+
+Deverá considerar:
+
+- toque;
+- teclado virtual;
+- telas pequenas;
+- diferentes densidades;
+- rotação quando suportada;
+- retomada da aplicação;
+- perda e recuperação de conexão;
+- navegação por gestos e componentes adequados.
+
+## 7.6 iOS
+
+Deverá considerar:
+
+- toque;
+- teclado virtual;
+- diferentes tamanhos de tela;
+- ciclo de vida da aplicação;
+- retomada;
+- conectividade;
+- navegação adaptada ao iOS.
+
+Nenhuma diferença de plataforma poderá modificar regras de negócio.
 
 ---
 
-# 6. Comportamento comum entre plataformas
+# 8. COMPORTAMENTO COMUM
 
-As seguintes regras são comuns:
+Todos os clientes deverão obedecer às seguintes regras:
 
-- a conta do usuário é a mesma;
-- os documentos pertencem ao mesmo ambiente de dados;
-- versões devem permanecer consistentes;
-- permissões são definidas pelo servidor;
-- alterações realizadas em um dispositivo devem poder aparecer nos demais;
-- a interface deve preservar a mesma hierarquia de informação;
-- ações equivalentes devem possuir comportamento equivalente;
-- erros devem possuir tratamento consistente;
-- operações críticas devem apresentar confirmação ou proteção contra perda;
-- nenhuma plataforma poderá conceder uma permissão que o servidor não autorize.
+- mesma conta;
+- mesmo ambiente de dados;
+- mesmos documentos;
+- mesmas versões;
+- mesmas permissões;
+- mesmas regras de segurança;
+- mesma identificação dos objetos;
+- mesmas regras de exclusão;
+- mesma lógica de auditoria;
+- mesma lógica de autorização.
 
-O servidor será a fonte de verdade para dados persistentes.
+Uma ação disponível em múltiplas plataformas deverá produzir o mesmo resultado lógico.
 
----
+Diferenças de interface são permitidas. Diferenças de regra de negócio não são.
 
-# 7. Particularidades por plataforma
+O backend é a autoridade para:
 
-## Web
-
-A versão Web será otimizada para navegação por navegador, teclado e diferentes tamanhos de tela. Deverá funcionar como aplicação real conectada à API, sem dados fictícios.
-
-## Windows
-
-A aplicação deverá possuir janela própria, instalação, execução, atualização e desinstalação adequadas ao ambiente Windows.
-
-## macOS
-
-A aplicação deverá respeitar o modelo de distribuição e execução do macOS, mantendo o mesmo comportamento funcional do núcleo.
-
-## Linux
-
-A aplicação deverá ser distribuída em formato definido na etapa de empacotamento e manter o mesmo núcleo funcional.
-
-## Android
-
-A interface deverá priorizar toque, telas menores, teclado virtual, orientação e retomada de conexão.
-
-## iOS
-
-A interface deverá seguir o mesmo princípio funcional do Android, adaptada às características do iOS.
-
-Nenhuma diferença visual de plataforma poderá alterar as regras de negócio.
+- identidade;
+- autorização;
+- persistência;
+- versionamento;
+- auditoria;
+- estado definitivo.
 
 ---
 
-# 8. Identidade visual
+# 9. IDENTIDADE VISUAL CONGELADA
 
-A identidade visual será definida como parte do produto e deverá ser aplicada de forma consistente.
+A identidade visual da primeira versão seguirá uma linguagem:
 
-Princípios obrigatórios:
+- profissional;
+- tecnológica;
+- limpa;
+- consistente;
+- funcional;
+- discreta;
+- orientada à produtividade.
 
-- aparência profissional;
-- hierarquia visual clara;
-- consistência entre telas;
-- espaçamento coerente;
+## 9.1 Princípios
+
+Todas as telas deverão possuir:
+
+- hierarquia visual;
+- espaçamento consistente;
 - tipografia legível;
-- estados de carregamento, sucesso, erro e vazio;
-- feedback visual para ações;
-- adaptação a telas pequenas;
-- acessibilidade considerada desde a implementação.
+- componentes reutilizáveis;
+- estados de carregamento;
+- estados vazios;
+- estados de erro;
+- estados de sucesso;
+- feedback de interação;
+- contraste adequado;
+- foco visível;
+- adaptação responsiva.
 
-A identidade visual detalhada deverá ser registrada em documentação própria antes da conclusão da interface.
+## 9.2 Sistema visual
 
----
+A implementação deverá centralizar:
 
-# 9. Nomenclatura oficial
+- tipografia;
+- tamanhos;
+- pesos;
+- espaçamentos;
+- raios;
+- sombras;
+- bordas;
+- ícones;
+- componentes;
+- estados;
+- breakpoints;
+- tokens de cor.
 
-Os nomes abaixo ficam congelados para a primeira versão:
+Nenhuma tela deverá inventar valores visuais isoladamente quando existir um token equivalente.
 
-- Korczak Documents — produto;
-- Dashboard/Início — área inicial;
-- Documentos — área principal de documentos;
-- Editor — área de edição;
-- Pastas — organização hierárquica;
-- Favoritos — documentos marcados;
-- Recentes — documentos acessados recentemente;
-- Lixeira — itens removidos;
-- Pesquisa — busca geral;
-- Pesquisa avançada — filtros combinados;
-- Perfil — dados do usuário;
-- Usuários — administração de usuários;
-- Grupos — agrupamento de usuários;
-- Permissões — controle de acesso;
-- Auditoria — registro de eventos;
-- Administração — administração geral;
-- Configurações — preferências e configurações.
+## 9.3 Acessibilidade
 
-Os nomes de API e banco devem ser mantidos tecnicamente consistentes com essa nomenclatura.
+A interface deverá considerar:
 
----
-
-# 10. Regras de negócio
-
-1. Todo documento deve possuir identificação única.
-2. Todo documento deve possuir proprietário ou contexto de propriedade definido.
-3. Um usuário só poderá executar uma operação quando possuir autorização para ela.
-4. A interface nunca será considerada autoridade de segurança.
-5. Toda operação protegida deverá ser validada no servidor.
-6. Exclusão lógica deverá ser diferenciada de exclusão definitiva.
-7. Uma versão restaurada deverá manter histórico coerente.
-8. Alterações importantes deverão ser registradas na auditoria.
-9. Alterações concorrentes não poderão causar sobrescrita silenciosa.
-10. Erros de comunicação não poderão ser tratados como salvamento confirmado.
-11. Dados fictícios não poderão permanecer como substitutos de dados reais na versão final.
-12. Toda ação visível ao usuário deverá possuir comportamento correspondente.
-13. Documentos de um usuário não poderão ficar acessíveis apenas pela alteração manual de identificadores.
-14. A sincronização deverá preservar a consistência do servidor.
-15. Operações destrutivas deverão possuir proteção adequada contra execução acidental.
+- contraste;
+- foco;
+- navegação por teclado onde aplicável;
+- tamanho adequado de áreas de toque;
+- mensagens compreensíveis;
+- identificação textual de ações importantes;
+- não depender exclusivamente de cor para comunicar estado.
 
 ---
 
-# 11. Modelo de permissões
+# 10. NOMENCLATURA OFICIAL
 
-A primeira versão utilizará três perfis funcionais básicos:
+Os nomes funcionais ficam congelados:
 
-### Administrador
-Responsável pela administração do ambiente, usuários, grupos, permissões e auditoria conforme as regras definidas pelo sistema.
+- Korczak Documents;
+- Início;
+- Dashboard;
+- Documentos;
+- Editor;
+- Pastas;
+- Favoritos;
+- Recentes;
+- Lixeira;
+- Pesquisa;
+- Pesquisa avançada;
+- Perfil;
+- Usuários;
+- Grupos;
+- Permissões;
+- Auditoria;
+- Administração;
+- Configurações;
+- Sessões;
+- Histórico;
+- Versões.
 
-### Gestor
-Responsável pelas operações administrativas que lhe forem atribuídas, sem receber automaticamente todos os poderes do administrador.
+"Korczak Documents" é o nome oficial do produto.
 
-### Usuário
-Responsável pelo uso cotidiano dos documentos dentro das permissões concedidas.
-
-Além dos perfis, o sistema deverá permitir permissões específicas quando necessário.
-
-A autorização deverá ser aplicada no backend. O frontend apenas refletirá permissões já determinadas pelo servidor.
+A nomenclatura técnica de código, API e banco deverá possuir correspondência clara com esses conceitos.
 
 ---
 
-# 12. Modelo de documentos
+# 11. REGRAS DE NEGÓCIO
 
-Cada documento deverá possuir, no mínimo, um conjunto de informações capaz de identificar:
+As seguintes regras são obrigatórias:
 
-- identificador;
-- título/nome;
-- descrição quando existente;
+1. Todo documento possui identificador único e estável.
+2. Todo documento possui proprietário ou contexto de propriedade.
+3. Toda operação protegida é autorizada no servidor.
+4. O frontend não é autoridade de segurança.
+5. Identificadores não podem ser utilizados para contornar autorização.
+6. Documento excluído logicamente não deve desaparecer imediatamente do histórico administrativo.
+7. Exclusão definitiva é diferente de exclusão lógica.
+8. Operações destrutivas devem possuir proteção contra acionamento acidental.
+9. Uma restauração de versão preserva o histórico existente.
+10. Alterações relevantes devem gerar auditoria.
+11. Conflitos não podem ser resolvidos por sobrescrita silenciosa.
+12. Falha de rede não pode ser apresentada como salvamento confirmado.
+13. Dados fictícios não podem substituir dados reais na versão final.
+14. Uma ação apresentada na interface deve possuir comportamento real correspondente.
+15. O usuário somente pode consultar objetos que sua autorização permita.
+16. A busca deve filtrar resultados de acordo com a autorização.
+17. Uma conta desativada não pode continuar operando como conta ativa.
+18. Mudanças de permissão devem possuir rastreabilidade.
+19. Alterações de conteúdo devem manter autoria e temporalidade.
+20. O servidor é a fonte de verdade para dados persistidos.
+21. A sincronização deve preservar integridade dos dados.
+22. O sistema deve informar claramente quando uma operação falhar.
+23. Nenhum cliente poderá criar permissões superiores às determinadas pelo servidor.
+24. Dados sensíveis não devem aparecer desnecessariamente em mensagens, logs ou interfaces.
+25. Operações administrativas devem ser protegidas por autorização apropriada.
+
+---
+
+# 12. MODELO DE PERMISSÕES
+
+A autorização será composta por perfil funcional e permissões específicas.
+
+## 12.1 Administrador
+
+Pode, conforme as regras do ambiente:
+
+- administrar usuários;
+- administrar grupos;
+- administrar permissões;
+- consultar auditoria;
+- administrar configurações administrativas;
+- executar operações de manutenção autorizadas.
+
+## 12.2 Gestor
+
+Pode executar as funções administrativas que forem explicitamente concedidas.
+
+Ser Gestor não significa possuir automaticamente todos os poderes do Administrador.
+
+## 12.3 Usuário
+
+Pode operar documentos e recursos pessoais ou compartilhados conforme as permissões recebidas.
+
+## 12.4 Permissões específicas
+
+A implementação deverá trabalhar com permissões granulares para ações como:
+
+- visualizar;
+- criar;
+- editar;
+- excluir;
+- restaurar;
+- mover;
+- compartilhar quando houver compartilhamento;
+- administrar;
+- auditar.
+
+A decisão final de autorização sempre será do backend.
+
+---
+
+# 13. MODELO DE DOCUMENTOS
+
+Um documento deverá possuir, conceitualmente:
+
+- id;
+- título;
+- descrição;
 - proprietário;
 - pasta;
 - etiquetas;
 - estado;
 - versão atual;
-- datas relevantes;
-- informações necessárias para auditoria;
-- referência ao conteúdo conforme a estratégia de armazenamento adotada.
+- data de criação;
+- data de atualização;
+- autor da última alteração;
+- estado de exclusão;
+- referências de armazenamento;
+- informações necessárias para auditoria.
 
-O documento e seu histórico de versões serão tratados como conceitos relacionados, porém distintos.
+## Estados mínimos
+
+- ativo;
+- na lixeira;
+- restaurado;
+- excluído definitivamente.
+
+O conteúdo e o histórico de versões serão tratados como entidades relacionadas ao documento, e não como substitutos do documento.
 
 ---
 
-# 13. Modelo de usuários
+# 14. MODELO DE USUÁRIOS
 
-Um usuário deverá possuir identidade própria no sistema e informações necessárias para:
+Um usuário deverá possuir:
 
-- autenticação;
-- identificação;
+- identificador;
+- dados de identificação;
+- credenciais protegidas;
 - estado da conta;
 - perfil;
 - grupos;
-- permissões;
+- permissões efetivas;
 - sessões;
-- auditoria;
-- preferências aplicáveis.
+- preferências;
+- datas relevantes;
+- informações de auditoria.
 
-Credenciais nunca deverão ser armazenadas de forma insegura.
+Estados mínimos:
 
----
+- ativo;
+- desativado.
 
-# 14. Modelo de pastas
-
-Pastas terão finalidade de organização.
-
-Deverão suportar:
-
-- criação;
-- renomeação;
-- exclusão;
-- restauração quando aplicável;
-- movimentação de documentos;
-- hierarquia quando prevista pelo modelo;
-- controle de acesso quando aplicável.
-
-A exclusão de uma pasta deverá possuir comportamento explicitamente definido para os documentos contidos nela, evitando perda silenciosa de dados.
+A autenticação e a autorização são conceitos separados.
 
 ---
 
-# 15. Modelo de versões
+# 15. MODELO DE PASTAS
 
-Cada alteração que constituir uma nova versão deverá preservar o histórico anterior.
+Uma pasta deverá possuir:
 
-O sistema deverá permitir:
+- identificador;
+- nome;
+- proprietário ou contexto;
+- pasta pai quando houver hierarquia;
+- datas relevantes;
+- estado;
+- regras de acesso quando aplicáveis.
 
-- identificação da versão;
-- identificação do documento;
-- registro de autoria;
-- registro temporal;
-- acesso ao conteúdo da versão;
-- consulta ao histórico;
-- restauração.
+Operações:
 
-Restaurar uma versão não deverá apagar silenciosamente as versões posteriores. A operação deverá preservar o histórico.
+- criar;
+- renomear;
+- mover;
+- excluir;
+- restaurar quando aplicável.
+
+A exclusão de uma pasta deverá definir explicitamente o destino dos documentos e subpastas envolvidos. Não poderá haver perda silenciosa de conteúdo.
 
 ---
 
-# 16. Modelo de auditoria
+# 16. MODELO DE VERSÕES
 
-A auditoria deverá registrar eventos relevantes, incluindo:
+Uma versão deverá possuir:
+
+- identificador próprio;
+- documento relacionado;
+- número ou identificador de versão;
+- conteúdo ou referência ao conteúdo;
+- autor;
+- data;
+- motivo/metadados quando definidos;
+- estado necessário à restauração.
+
+Regras:
+
+- versões anteriores são preservadas;
+- uma nova versão não apaga a anterior;
+- restauração não destrói versões posteriores;
+- restauração gera estado rastreável;
+- histórico deve ser consultável por usuários autorizados.
+
+---
+
+# 17. MODELO DE AUDITORIA
+
+A auditoria deverá registrar eventos relevantes.
+
+Cada evento deverá possuir, conceitualmente:
+
+- identificador;
+- data e hora;
+- ator;
+- ação;
+- tipo de recurso;
+- identificador do recurso quando aplicável;
+- resultado;
+- contexto técnico necessário;
+- informações suficientes para investigação sem registrar dados sensíveis desnecessários.
+
+Eventos mínimos:
 
 - criação;
 - edição;
 - exclusão;
 - restauração;
-- alterações de permissões;
+- restauração de versão;
+- alteração de permissões;
+- alteração de grupos;
 - alterações administrativas;
 - autenticações relevantes;
-- demais eventos de segurança ou administração definidos durante a implementação.
+- alterações de conta;
+- eventos de segurança relevantes.
 
-Os registros deverão ser protegidos contra alterações indevidas e deverão permitir consulta e filtragem.
-
----
-
-# 17. Contrato de sincronização
-
-O servidor será a fonte central dos dados persistentes.
-
-Cada documento deverá possuir identificação estável. Versões também deverão possuir identificação própria.
-
-A sincronização deverá:
-
-1. enviar uma alteração ao servidor;
-2. receber confirmação;
-3. atualizar o estado local;
-4. refletir a alteração em outros clientes;
-5. detectar conflitos;
-6. impedir sobrescrita silenciosa;
-7. permitir recuperação quando houver falha de conexão.
-
-O comportamento offline detalhado será definido na implementação, sem transformar indisponibilidade temporária em confirmação falsa de salvamento.
+Os registros de auditoria não poderão ser editados pelo fluxo administrativo comum.
 
 ---
 
-# 18. Critério de congelamento
+# 18. SINCRONIZAÇÃO
 
-A Fase 0 é considerada concluída quando:
+A sincronização deverá utilizar o servidor como fonte de verdade.
 
-- o escopo está registrado;
-- as funcionalidades obrigatórias estão registradas;
-- o que fica fora da primeira versão está registrado;
-- as seis plataformas estão definidas;
-- o comportamento comum está definido;
-- as diferenças de plataforma estão registradas;
-- a identidade visual possui princípios definidos;
-- a nomenclatura está congelada;
-- as regras de negócio estão registradas;
-- as permissões estão registradas;
-- os modelos de documento, usuário, pasta e versão estão registrados;
-- a auditoria está definida;
-- toda a decisão está armazenada no repositório.
+Fluxo mínimo:
+
+1. cliente identifica alteração;
+2. cliente envia alteração;
+3. servidor valida identidade;
+4. servidor valida autorização;
+5. servidor valida consistência;
+6. servidor persiste;
+7. servidor confirma;
+8. cliente atualiza seu estado;
+9. demais clientes podem receber o novo estado.
+
+## Falhas
+
+Se a comunicação falhar:
+
+- o cliente não deve declarar a operação como confirmada;
+- o estado pendente deve ser reconhecido;
+- a aplicação deve permitir recuperação;
+- uma repetição não deve criar duplicidade indevida.
+
+## Conflitos
+
+Quando duas alterações incompatíveis forem detectadas:
+
+- o servidor não deve sobrescrever silenciosamente uma alteração válida;
+- o conflito deve ser identificado;
+- o cliente deve receber informação suficiente para tratá-lo;
+- a resolução deverá preservar rastreabilidade.
+
+A implementação detalhada do mecanismo será definida nas fases técnicas, mas estas regras não poderão ser violadas.
 
 ---
 
-# 19. Regra de mudança após o congelamento
+# 19. ESTRUTURA DE DADOS E RELACIONAMENTOS
 
-Depois da conclusão desta fase, uma mudança que altere:
+Os conceitos mínimos são:
+
+- Usuário;
+- Grupo;
+- Permissão;
+- Sessão;
+- Documento;
+- Pasta;
+- Etiqueta;
+- Versão;
+- Auditoria;
+- Configuração.
+
+Relacionamentos fundamentais:
+
+- usuário possui sessões;
+- usuário pertence a grupos;
+- grupo possui permissões;
+- usuário pode possuir permissões específicas;
+- documento pertence a um contexto de propriedade;
+- documento pode estar em uma pasta;
+- documento possui versões;
+- documento pode possuir etiquetas;
+- ações relevantes geram auditoria.
+
+A implementação poderá dividir essas entidades em tabelas, coleções ou estruturas equivalentes, desde que preserve os contratos funcionais.
+
+---
+
+# 20. ESTADOS PADRONIZADOS DA INTERFACE
+
+Todo recurso que execute operação remota deverá possuir, quando aplicável:
+
+- carregando;
+- pronto;
+- vazio;
+- salvando;
+- salvo;
+- erro;
+- indisponível;
+- sem autorização;
+- conflito;
+- operação pendente.
+
+A interface não deverá apresentar estado de sucesso sem confirmação real.
+
+---
+
+# 21. SEGURANÇA DEFINIDA NA FASE 0
+
+A Fase 0 fixa os seguintes princípios:
+
+- autenticação é obrigatória para áreas protegidas;
+- autorização ocorre no backend;
+- credenciais devem ser protegidas;
+- sessões devem possuir política de validade;
+- operações administrativas exigem autorização;
+- recursos devem ser protegidos contra acesso por identificador;
+- dados sensíveis não devem ser expostos desnecessariamente;
+- auditoria deve rastrear eventos relevantes;
+- clientes não podem elevar seus próprios privilégios.
+
+Os detalhes de implementação criptográfica, infraestrutura e testes pertencem às fases técnicas seguintes, mas deverão obedecer a estes princípios.
+
+---
+
+# 22. TRATAMENTO DE ERROS
+
+Os erros deverão ser classificados, no mínimo, em:
+
+- validação;
+- autenticação;
+- autorização;
+- não encontrado;
+- conflito;
+- indisponibilidade;
+- falha de persistência;
+- falha de sincronização;
+- erro inesperado.
+
+A mensagem exibida ao usuário deverá ser compreensível e não deverá expor informações internas desnecessárias.
+
+---
+
+# 23. RESPONSABILIDADE POR CAMADA
+
+## Cliente
+
+Responsável por:
+
+- apresentação;
+- interação;
+- validações de experiência;
+- estados visuais;
+- envio de solicitações;
+- apresentação de respostas.
+
+## API/backend
+
+Responsável por:
+
+- autenticação;
+- autorização;
+- regras de negócio;
+- validação definitiva;
+- persistência;
+- versionamento;
+- auditoria;
+- sincronização;
+- consistência.
+
+## Banco/armazenamento
+
+Responsável por:
+
+- persistência;
+- integridade;
+- recuperação conforme a arquitetura;
+- armazenamento do conteúdo e metadados.
+
+Nenhuma camada de apresentação poderá substituir a autoridade do backend.
+
+---
+
+# 24. CRITÉRIOS DE ACEITAÇÃO DA FASE 0
+
+A Fase 0 somente pode ser considerada fechada quando os 16 setores abaixo estiverem documentados:
+
+### 1. Escopo
+Deve existir definição clara do produto e seus limites.
+
+### 2. Funcionalidades obrigatórias
+Cada grupo funcional deve estar listado.
+
+### 3. Funcionalidades futuras
+O que não pertence à primeira versão deve estar explicitamente separado.
+
+### 4. Plataformas
+As seis plataformas devem estar identificadas.
+
+### 5. Comportamento comum
+As regras compartilhadas devem estar definidas.
+
+### 6. Particularidades
+Cada plataforma deve ter suas responsabilidades específicas registradas.
+
+### 7. Identidade visual
+Os princípios e o sistema visual devem estar definidos.
+
+### 8. Nomenclatura
+Os nomes funcionais devem estar congelados.
+
+### 9. Regras de negócio
+As regras que não podem ser quebradas pela implementação devem estar registradas.
+
+### 10. Permissões
+Perfis e princípios de autorização devem estar definidos.
+
+### 11. Documentos
+O modelo conceitual e seus estados devem estar definidos.
+
+### 12. Usuários
+O modelo conceitual e estados devem estar definidos.
+
+### 13. Pastas
+Estrutura e comportamento devem estar definidos.
+
+### 14. Versões
+Histórico e restauração devem estar definidos.
+
+### 15. Auditoria
+Eventos e estrutura mínima devem estar definidos.
+
+### 16. Documentação oficial
+Tudo deve estar armazenado no repositório oficial.
+
+**Todos os 16 critérios estão atendidos por esta versão.**
+
+---
+
+# 25. O QUE SIGNIFICA "100%" NESTA FASE
+
+"100% concluída" significa:
+
+**100% dos requisitos da Fase 0 foram definidos e registrados.**
+
+Não significa:
+
+- 100% do código pronto;
+- 100% da API pronta;
+- 100% do banco criado;
+- 100% da interface criada;
+- 100% dos aplicativos compilados;
+- 100% dos testes executados;
+- 100% das plataformas publicadas.
+
+Esses resultados pertencem às fases posteriores.
+
+Essa distinção é obrigatória para evitar que planejamento seja confundido com implementação.
+
+---
+
+# 26. CONTROLE DE ALTERAÇÕES
+
+Após o fechamento da Fase 0, qualquer mudança que altere:
 
 - escopo;
-- comportamento;
-- modelo de dados;
-- permissões;
-- plataformas;
+- funcionalidade obrigatória;
+- funcionalidade futura;
+- plataforma;
+- comportamento comum;
+- comportamento específico;
+- identidade;
 - nomenclatura;
-- regras de negócio;
-- requisitos de sincronização;
+- regra de negócio;
+- permissão;
+- modelo de documento;
+- modelo de usuário;
+- modelo de pasta;
+- modelo de versão;
+- auditoria;
+- sincronização;
 
-deverá ser registrada como alteração da especificação.
+deverá gerar uma nova revisão da especificação.
 
-Não será permitido alterar silenciosamente este contrato apenas para acomodar uma implementação.
+Nenhuma alteração desse tipo deverá ser feita silenciosamente durante as fases seguintes.
 
 ---
 
-# 20. Registro oficial
+# 27. VEREDITO DA REVISÃO
 
-Este documento é a referência oficial da Fase 0 do Korczak Documents.
+## Fase 0: 100% CONCLUÍDA
 
-A implementação das fases seguintes deverá consultar este documento antes de introduzir novas funcionalidades ou alterar comportamentos definidos.
+**16 de 16 setores fechados.**
 
-**Estado da Fase 0: CONCLUÍDA.**
+### Cobertura
+- Escopo: fechado.
+- Funcionalidades: fechadas.
+- Futuro: fechado.
+- Plataformas: fechadas.
+- Comportamento comum: fechado.
+- Particularidades: fechadas.
+- Visual: fechado em nível de especificação.
+- Nomenclatura: fechada.
+- Negócio: fechado.
+- Permissões: fechadas.
+- Documentos: fechado.
+- Usuários: fechado.
+- Pastas: fechado.
+- Versões: fechado.
+- Auditoria: fechado.
+- Documentação: registrada.
+
+### Limite importante
+
+A partir deste ponto, a existência de uma definição não deve ser confundida com a existência da implementação correspondente.
+
+A Fase 0 está completa porque o contrato de produto está fechado.
+
+As fases seguintes são responsáveis por transformar esse contrato em software funcional, testado, publicado e homologado.
+
+---
+
+# 28. REGISTRO OFICIAL
+
+Este arquivo é a referência oficial da Fase 0 do Korczak Documents.
+
+Qualquer documento posterior deverá respeitar este contrato ou registrar formalmente a alteração correspondente.
+
+**STATUS FINAL DA FASE 0: 100% CONCLUÍDA.**
+
+**16/16 setores: OK.**
