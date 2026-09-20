@@ -37,13 +37,14 @@ async def test_mongodb_bootstrap_indexes_seed_and_recovery_round_trip(tmp_path: 
     saved = await database["eventos"].find_one({"type": "test.recovery"})
     assert saved is not None
 
-    backup_dir = tmp_path / "backup"
-    create_backup(os.environ["MONGODB_URI"], database.name, str(backup_dir))
+    archive = create_backup(os.environ["MONGODB_URI"], database.name, str(tmp_path / "backup"))
+    assert Path(archive).is_file()
+    assert Path(archive).stat().st_size > 0
 
     await database["eventos"].delete_many({"type": "test.recovery"})
     assert await database["eventos"].find_one({"type": "test.recovery"}) is None
 
-    restore_backup(os.environ["MONGODB_URI"], database.name, str(backup_dir / database.name))
+    restore_backup(os.environ["MONGODB_URI"], database.name, archive)
     restored = await database["eventos"].find_one({"type": "test.recovery"})
     assert restored is not None
     assert restored["payload"] == "backup-round-trip"
