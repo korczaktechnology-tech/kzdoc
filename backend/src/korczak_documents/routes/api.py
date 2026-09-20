@@ -11,6 +11,12 @@ from ..database.connection import get_database
 router = APIRouter()
 
 
+def without_mongo_id(item: dict) -> dict:
+    cleaned = dict(item)
+    cleaned.pop("_id", None)
+    return cleaned
+
+
 @router.post("/auth/register", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterRequest):
     token, expires_at, user = await service.register(payload)
@@ -163,7 +169,8 @@ async def delete_folder(folder_id: str, user=Depends(current_user)):
 
 @router.get("/tags")
 async def tags(user=Depends(current_user)):
-    return await get_database()["etiquetas"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+    items = await get_database()["etiquetas"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+    return [without_mongo_id(item) for item in items]
 
 
 @router.post("/tags", status_code=201)
@@ -174,6 +181,7 @@ async def create_tag(payload: TagCreateRequest, user=Depends(current_user)):
         raise AppError("Etiqueta já existe", "tag_already_exists", 409)
     tag = {"id": __import__("uuid").uuid4().hex, "owner_id": user["id"], "name": payload.name.strip(), "created_at": service.repo.now(), "updated_at": service.repo.now()}
     await collection.insert_one(tag)
+    tag.pop("_id", None)
     await repo.log_event(user["id"], "tag.created", {"tag_id": tag["id"]})
     return tag
 
@@ -228,7 +236,7 @@ async def favorites(user=Depends(current_user)):
 @router.get("/recent")
 async def recent(user=Depends(current_user)):
     events = await get_database()["eventos"].find({"user_id": user["id"], "type": "document.opened"}).sort("created_at", -1).limit(50).to_list(length=50)
-    return events
+    return [without_mongo_id(item) for item in events]
 
 
 @router.get("/trash", response_model=list[DocumentResponse])
@@ -257,13 +265,15 @@ async def open_document(document_id: str, user=Depends(current_user)):
 
 @router.get("/groups")
 async def groups(user=Depends(current_user)):
-    return await get_database()["grupos"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+    items = await get_database()["grupos"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+    return [without_mongo_id(item) for item in items]
 
 
 @router.post("/groups", status_code=201)
 async def create_group(payload: GroupCreateRequest, user=Depends(current_user)):
     group = {"id": __import__("uuid").uuid4().hex, "owner_id": user["id"], "name": payload.name.strip(), "member_ids": [], "created_at": service.repo.now(), "updated_at": service.repo.now()}
     await get_database()["grupos"].insert_one(group)
+    group.pop("_id", None)
     await repo.log_event(user["id"], "group.created", {"group_id": group["id"]})
     return group
 
@@ -312,7 +322,7 @@ async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=
     skip, limit = service.page_values(page, page_size)
     filters = {"type": event_type} if event_type else {}
     items, total = await repo.list_events(user["id"], filters, skip, limit)
-    return {"items": items, "total": total, "page": page, "page_size": page_size}
+    return {"items": [without_mongo_id(item) for item in items], "total": total, "page": page, "page_size": page_size}
 
 
 @router.get("/notifications", response_model=list[NotificationResponse])
