@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Instalar backend
         working-directory: backend
         run: |
@@ -41,19 +41,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Instalar backend
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[test]"
-      - name: Instalar ferramentas MongoDB
+      - name: Instalar MongoDB Database Tools
         run: |
-          curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-8.0.gpg
-          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
-          sudo apt-get update
-          sudo apt-get install -y mongodb-database-tools
-      - name: Testar conexão, bootstrap, índices e recuperação
+          curl -fsSL https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.12.2.tgz -o /tmp/mongodb-tools.tgz
+          tar -xzf /tmp/mongodb-tools.tgz -C /tmp
+          sudo install /tmp/mongodb-database-tools-ubuntu2404-x86_64-100.12.2/bin/mongodump /usr/local/bin/mongodump
+          sudo install /tmp/mongodb-database-tools-ubuntu2404-x86_64-100.12.2/bin/mongorestore /usr/local/bin/mongorestore
+      - name: Testar conexão, bootstrap, índices e recuperação real
         working-directory: backend
         run: pytest -m integration
         env:
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Instalar frontend
         working-directory: frontend
         run: npm install
