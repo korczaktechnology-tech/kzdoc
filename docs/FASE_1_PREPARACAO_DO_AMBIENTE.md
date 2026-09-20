@@ -4,7 +4,8 @@
 **Fase:** 1 de 30  
 **Versão:** 1.0.0  
 **Data:** 20 de setembro de 2026  
-**Branch:** main
+**Branch:** main  
+**Validação operacional:** execução disparada por commit na branch `main` após revisão final da Fase 1.
 
 ## Objetivo
 
