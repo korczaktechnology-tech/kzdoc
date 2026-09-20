@@ -8,11 +8,11 @@ from fastapi.testclient import TestClient
 from korczak_documents.database.bootstrap import bootstrap_database
 from korczak_documents.database.connection import get_database
 from korczak_documents.main import app
-from korczak_documents.rate_limit import reset_rate_limits
+from korczak_documents.rate_limit import enforce_rate_limit, reset_rate_limits
 from korczak_documents.security import hash_password, validate_password_policy, verify_password
 
 
-def test_password_hash_is_salted_and_not_plaintext():
+def test_rate_limit_blocks_after_threshold():\n    reset_rate_limits()\n    for _ in range(10):\n        enforce_rate_limit("test-client", "login")\n    response = TestClient(app).post("/api/v1/auth/login", json={"email": "rate@example.com", "password": "wrong-password"})\n    assert response.status_code == 429\n    assert response.json()["error"]["code"] == "rate_limited"\n    reset_rate_limits()\n\ndef test_password_hash_is_salted_and_not_plaintext():
     raw = "Senha-Segura-2026!"
     encoded = hash_password(raw)
     assert encoded != raw
