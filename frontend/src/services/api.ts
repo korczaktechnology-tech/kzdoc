@@ -1,6 +1,6 @@
-export type User={id:string;name:string;email:string;phone:string|null;email_verified:boolean;phone_verified:boolean;role:string;created_at:string;updated_at:string};
+export type User={id:string;name:string;email:string;phone:string|null;email_verified:boolean;phone_verified:boolean;role:string;status:string;created_at:string;updated_at:string};
 export type Session={token:string;expires_at:string;user:User};
-export type DocumentItem={id:string;owner_id:string;name:string;document_type:string;folder_id:string|null;current_version_id:string|null;status:string;favorite:boolean;created_at:string;updated_at:string;status?:string;content?:string|null};
+export type DocumentItem={id:string;owner_id:string;name:string;document_type:string;folder_id:string|null;current_version_id:string|null;status:string;favorite:boolean;created_at:string;updated_at:string;content?:string|null};
 export type Version={id:string;document_id:string;version_number:number;author_id:string;content:string|null;created_at:string};
 export type Folder={id:string;owner_id:string;parent_id:string|null;name:string;created_at:string;updated_at:string};
 export type Notification={id:string;user_id:string;type:string;message:string;read:boolean;created_at:string};
