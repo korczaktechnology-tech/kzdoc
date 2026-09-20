@@ -10,7 +10,7 @@ from ..database.connection import get_database
 def clean_user(user: dict) -> dict:
     return {k: user[k] for k in (
         "id", "name", "email", "phone", "email_verified",
-        "phone_verified", "role", "created_at", "updated_at"
+        "phone_verified", "role", "status", "created_at", "updated_at"
     )}
 
 
