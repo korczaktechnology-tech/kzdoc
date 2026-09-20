@@ -1,0 +1,328 @@
+from fastapi import APIRouter, Depends, Header, Query, status
+
+from ..dependencies import current_user
+from ..errors import AppError, NotFoundError, ValidationError
+from ..models.api import *
+from ..repositories import api as repo
+from ..security import create_session, token_hash
+from ..services import api as service
+from ..database.connection import get_database
+
+router = APIRouter()
+
+
+@router.post("/auth/register", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+async def register(payload: RegisterRequest):
+    token, expires_at, user = await service.register(payload)
+    return SessionResponse(token=token, expires_at=expires_at, user=user)
+
+
+@router.post("/auth/login", response_model=SessionResponse)
+async def login(payload: LoginRequest):
+    token, expires_at, user = await service.login(payload)
+    return SessionResponse(token=token, expires_at=expires_at, user=user)
+
+
+@router.post("/auth/logout")
+async def logout(authorization: str | None = Header(default=None), user=Depends(current_user)):
+    token = authorization[7:].strip() if authorization and authorization.lower().startswith("bearer ") else ""
+    await service.logout(token)
+    await repo.log_event(user["id"], "auth.logout", {"user_id": user["id"]})
+    return {"message": "Sessão encerrada"}
+
+
+@router.post("/auth/recovery")
+async def recovery(payload: RecoveryRequest):
+    return await service.request_recovery(payload.email)
+
+
+@router.get("/users/me", response_model=UserResponse)
+async def me(user=Depends(current_user)):
+    return service.clean_user(user)
+
+
+@router.patch("/users/me", response_model=UserResponse)
+async def update_me(payload: UserUpdateRequest, user=Depends(current_user)):
+    changes = payload.model_dump(exclude_unset=True)
+    updated = await repo.update_user(user["id"], changes)
+    await repo.log_event(user["id"], "user.updated", {"fields": list(changes)})
+    return service.clean_user(updated)
+
+
+@router.get("/users", response_model=list[UserResponse])
+async def users(user=Depends(current_user)):
+    if user["role"] != "admin":
+        raise AppError("Acesso administrativo necessário", "forbidden", 403)
+    items = await get_database()["usuarios"].find({}, {"password_hash": 0}).sort("name", 1).to_list(length=1000)
+    return [service.clean_user(item) for item in items]
+
+
+@router.get("/documents", response_model=list[DocumentResponse])
+async def documents(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), user=Depends(current_user)):
+    skip, limit = service.page_values(page, page_size)
+    items, _ = await repo.list_documents(user["id"], {"status": {"$ne": "deleted"}}, skip, limit)
+    return [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
+
+
+@router.post("/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+async def create_document(payload: DocumentCreateRequest, user=Depends(current_user)):
+    document = await repo.create_document(user["id"], payload.model_dump())
+    if payload.content is not None:
+        version = await repo.create_version(document["id"], user["id"], payload.content, 1)
+        document = await repo.get_document(document["id"])
+    await repo.log_event(user["id"], "document.created", {"document_id": document["id"]})
+    return DocumentResponse(**document, favorite=False)
+
+
+@router.get("/documents/{document_id}", response_model=DocumentResponse)
+async def get_document(document_id: str, user=Depends(current_user)):
+    document = await service.document_or_404(document_id, user["id"])
+    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []))
+
+
+@router.patch("/documents/{document_id}", response_model=DocumentResponse)
+async def update_document(document_id: str, payload: DocumentUpdateRequest, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    changes = payload.model_dump(exclude_unset=True)
+    document = await repo.update_document(document_id, changes)
+    await repo.log_event(user["id"], "document.updated", {"document_id": document_id, "fields": list(changes)})
+    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []))
+
+
+@router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    await repo.update_document(document_id, {"status": "deleted"})
+    await repo.log_event(user["id"], "document.deleted", {"document_id": document_id})
+    return {"message": "Documento movido para a lixeira"}
+
+
+@router.post("/documents/{document_id}/restore")
+async def restore_document(document_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    await repo.update_document(document_id, {"status": "active"})
+    await repo.log_event(user["id"], "document.restored", {"document_id": document_id})
+    return {"message": "Documento restaurado"}
+
+
+@router.delete("/documents/{document_id}/permanent")
+async def permanent_delete_document(document_id: str, user=Depends(current_user)):
+    document = await service.document_or_404(document_id, user["id"])
+    await get_database()["versoes"].delete_many({"document_id": document_id})
+    await get_database()["documentos"].delete_one({"id": document_id})
+    await repo.log_event(user["id"], "document.permanent_deleted", {"document_id": document_id})
+    return {"message": "Documento excluído definitivamente"}
+
+
+@router.get("/documents/{document_id}/versions", response_model=list[VersionResponse])
+async def versions(document_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    return await repo.list_versions(document_id)
+
+
+@router.post("/documents/{document_id}/versions", response_model=VersionResponse, status_code=201)
+async def create_version(document_id: str, payload: VersionCreateRequest, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    version = await repo.create_version(document_id, user["id"], payload.content, await service.version_number(document_id))
+    await repo.log_event(user["id"], "document.version_created", {"document_id": document_id, "version_id": version["id"]})
+    return version
+
+
+@router.get("/folders", response_model=list[FolderResponse])
+async def folders(user=Depends(current_user)):
+    return await repo.list_folders(user["id"])
+
+
+@router.post("/folders", response_model=FolderResponse, status_code=201)
+async def create_folder(payload: FolderCreateRequest, user=Depends(current_user)):
+    if payload.parent_id:
+        await service.folder_or_404(payload.parent_id, user["id"])
+    folder = await repo.create_folder(user["id"], payload.model_dump())
+    await repo.log_event(user["id"], "folder.created", {"folder_id": folder["id"]})
+    return folder
+
+
+@router.patch("/folders/{folder_id}", response_model=FolderResponse)
+async def update_folder(folder_id: str, payload: FolderUpdateRequest, user=Depends(current_user)):
+    await service.folder_or_404(folder_id, user["id"])
+    changes = payload.model_dump(exclude_unset=True)
+    if changes.get("parent_id"):
+        await service.folder_or_404(changes["parent_id"], user["id"])
+    folder = await repo.update_folder(folder_id, changes)
+    await repo.log_event(user["id"], "folder.updated", {"folder_id": folder_id})
+    return folder
+
+
+@router.delete("/folders/{folder_id}")
+async def delete_folder(folder_id: str, user=Depends(current_user)):
+    await service.folder_or_404(folder_id, user["id"])
+    await repo.delete_folder(folder_id)
+    await repo.log_event(user["id"], "folder.deleted", {"folder_id": folder_id})
+    return {"message": "Pasta excluída"}
+
+
+@router.get("/tags")
+async def tags(user=Depends(current_user)):
+    return await get_database()["etiquetas"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+
+
+@router.post("/tags", status_code=201)
+async def create_tag(payload: TagCreateRequest, user=Depends(current_user)):
+    collection = get_database()["etiquetas"]
+    existing = await collection.find_one({"owner_id": user["id"], "name": payload.name.strip()})
+    if existing:
+        raise AppError("Etiqueta já existe", "tag_already_exists", 409)
+    tag = {"id": __import__("uuid").uuid4().hex, "owner_id": user["id"], "name": payload.name.strip(), "created_at": service.repo.now(), "updated_at": service.repo.now()}
+    await collection.insert_one(tag)
+    await repo.log_event(user["id"], "tag.created", {"tag_id": tag["id"]})
+    return tag
+
+
+@router.delete("/tags/{tag_name}")
+async def delete_tag(tag_name: str, user=Depends(current_user)):
+    tag = await service.tag_or_404(tag_name, user["id"])
+    await get_database()["etiquetas"].delete_one({"id": tag["id"]})
+    await repo.log_event(user["id"], "tag.deleted", {"tag_id": tag["id"]})
+    return {"message": "Etiqueta removida"}
+
+
+@router.post("/documents/{document_id}/tags/{tag_name}")
+async def apply_tag(document_id: str, tag_name: str, user=Depends(current_user)):
+    document = await service.document_or_404(document_id, user["id"])
+    await service.tag_or_404(tag_name, user["id"])
+    await get_database()["documentos"].update_one({"id": document_id}, {"$addToSet": {"tag_names": tag_name}})
+    await repo.log_event(user["id"], "tag.applied", {"document_id": document_id, "tag": tag_name})
+    return {"message": "Etiqueta aplicada"}
+
+
+@router.delete("/documents/{document_id}/tags/{tag_name}")
+async def remove_tag(document_id: str, tag_name: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    await get_database()["documentos"].update_one({"id": document_id}, {"$pull": {"tag_names": tag_name}})
+    await repo.log_event(user["id"], "tag.removed", {"document_id": document_id, "tag": tag_name})
+    return {"message": "Etiqueta removida"}
+
+
+@router.post("/documents/{document_id}/favorite")
+async def favorite(document_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    await get_database()["documentos"].update_one({"id": document_id}, {"$addToSet": {"favorite_user_ids": user["id"]}})
+    await repo.log_event(user["id"], "favorite.added", {"document_id": document_id})
+    return {"message": "Adicionado aos favoritos"}
+
+
+@router.delete("/documents/{document_id}/favorite")
+async def unfavorite(document_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    await get_database()["documentos"].update_one({"id": document_id}, {"$pull": {"favorite_user_ids": user["id"]}})
+    await repo.log_event(user["id"], "favorite.removed", {"document_id": document_id})
+    return {"message": "Removido dos favoritos"}
+
+
+@router.get("/favorites", response_model=list[DocumentResponse])
+async def favorites(user=Depends(current_user)):
+    items = await get_database()["documentos"].find({"owner_id": user["id"], "favorite_user_ids": user["id"]}).sort("updated_at", -1).to_list(length=1000)
+    return [DocumentResponse(**item, favorite=True) for item in items]
+
+
+@router.get("/recent")
+async def recent(user=Depends(current_user)):
+    events = await get_database()["eventos"].find({"user_id": user["id"], "type": "document.opened"}).sort("created_at", -1).limit(50).to_list(length=50)
+    return events
+
+
+@router.get("/trash", response_model=list[DocumentResponse])
+async def trash(user=Depends(current_user)):
+    items = await get_database()["documentos"].find({"owner_id": user["id"], "status": "deleted"}).sort("updated_at", -1).to_list(length=1000)
+    return [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
+
+
+@router.get("/search", response_model=list[DocumentResponse])
+async def search(q: str = Query("", max_length=255), folder_id: str | None = None, status_filter: str | None = None, user=Depends(current_user)):
+    filters = {"owner_id": user["id"], "status": status_filter or {"$ne": "deleted"}}
+    if q.strip():
+        filters["$or"] = [{"name": {"$regex": q.strip(), "$options": "i"}}, {"document_type": {"$regex": q.strip(), "$options": "i"}}]
+    if folder_id:
+        filters["folder_id"] = folder_id
+    items = await get_database()["documentos"].find(filters).sort("updated_at", -1).limit(100).to_list(length=100)
+    return [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
+
+
+@router.post("/documents/{document_id}/open")
+async def open_document(document_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    await repo.log_event(user["id"], "document.opened", {"document_id": document_id})
+    return {"message": "Documento registrado como recente"}
+
+
+@router.get("/groups")
+async def groups(user=Depends(current_user)):
+    return await get_database()["grupos"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+
+
+@router.post("/groups", status_code=201)
+async def create_group(payload: GroupCreateRequest, user=Depends(current_user)):
+    group = {"id": __import__("uuid").uuid4().hex, "owner_id": user["id"], "name": payload.name.strip(), "member_ids": [], "created_at": service.repo.now(), "updated_at": service.repo.now()}
+    await get_database()["grupos"].insert_one(group)
+    await repo.log_event(user["id"], "group.created", {"group_id": group["id"]})
+    return group
+
+
+@router.post("/groups/{group_id}/members/{member_id}")
+async def add_group_member(group_id: str, member_id: str, user=Depends(current_user)):
+    group = await get_database()["grupos"].find_one({"id": group_id, "owner_id": user["id"]})
+    if not group:
+        raise NotFoundError("Grupo não encontrado")
+    member = await repo.find_user(member_id)
+    if not member:
+        raise NotFoundError("Usuário não encontrado")
+    await get_database()["grupos"].update_one({"id": group_id}, {"$addToSet": {"member_ids": member_id}})
+    await repo.log_event(user["id"], "group.member_added", {"group_id": group_id, "member_id": member_id})
+    return {"message": "Usuário adicionado ao grupo"}
+
+
+@router.delete("/groups/{group_id}/members/{member_id}")
+async def remove_group_member(group_id: str, member_id: str, user=Depends(current_user)):
+    group = await get_database()["grupos"].find_one({"id": group_id, "owner_id": user["id"]})
+    if not group:
+        raise NotFoundError("Grupo não encontrado")
+    await get_database()["grupos"].update_one({"id": group_id}, {"$pull": {"member_ids": member_id}})
+    await repo.log_event(user["id"], "group.member_removed", {"group_id": group_id, "member_id": member_id})
+    return {"message": "Usuário removido do grupo"}
+
+
+@router.get("/permissions/{document_id}")
+async def permissions(document_id: str, user=Depends(current_user)):
+    document = await service.document_or_404(document_id, user["id"])
+    return {"document_id": document_id, "owner_id": document["owner_id"], "role": user["role"], "actions": ["read", "write", "delete", "share"]}
+
+
+@router.put("/permissions/{document_id}")
+async def set_permissions(document_id: str, payload: PermissionRequest, user=Depends(current_user)):
+    document = await service.document_or_404(document_id, user["id"])
+    if user["role"] != "admin":
+        raise AppError("Acesso administrativo necessário", "forbidden", 403)
+    await get_database()["documentos"].update_one({"id": document_id}, {"$set": {"permissions": {"role": payload.role, "actions": payload.actions}}})
+    await repo.log_event(user["id"], "permission.changed", {"document_id": document_id, "role": payload.role})
+    return {"document_id": document_id, "role": payload.role, "actions": payload.actions}
+
+
+@router.get("/audit")
+async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), event_type: str | None = None, user=Depends(current_user)):
+    skip, limit = service.page_values(page, page_size)
+    filters = {"type": event_type} if event_type else {}
+    items, total = await repo.list_events(user["id"], filters, skip, limit)
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@router.get("/notifications", response_model=list[NotificationResponse])
+async def notifications(user=Depends(current_user)):
+    return await get_database()["notificacoes"].find({"user_id": user["id"]}).sort("created_at", -1).limit(100).to_list(length=100)
+
+
+@router.post("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, user=Depends(current_user)):
+    result = await get_database()["notificacoes"].update_one({"id": notification_id, "user_id": user["id"]}, {"$set": {"read": True}})
+    if result.matched_count == 0:
+        raise NotFoundError("Notificação não encontrada")
+    return {"message": "Notificação marcada como lida"}
