@@ -8,9 +8,14 @@ settings = get_settings()
 configure_logging(settings)
 logger = get_logger(__name__)
 
-app = FastAPI(title=settings.app_name, version="0.1.0")
+app = FastAPI(
+    title=settings.app_name,
+    version="0.2.0",
+    description="API do Korczak Documents.",
+)
 register_exception_handlers(app)
 app.include_router(router, prefix="/api/v1")
+
 
 @app.get("/health", include_in_schema=False)
 def root_health() -> dict[str, str]:
