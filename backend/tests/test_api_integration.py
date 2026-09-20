@@ -22,7 +22,7 @@ async def test_api_end_to_end() -> None:
 
     client = TestClient(app)
     email = f"phase4-{uuid4().hex}@example.com"
-    password = "Senha-Fase4-123"
+    password = "Korczak-Fase4-2026!"
 
     response = client.post("/api/v1/auth/register", json={"name": "Fase 4", "email": email, "password": password})
     assert response.status_code == 201
