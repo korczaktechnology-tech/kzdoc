@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from korczak_documents.main import app
 from korczak_documents.models.api import RegisterRequest
+from korczak_documents.routes import router as api_router
 
 
 EXPECTED = {
@@ -50,13 +51,23 @@ EXPECTED = {
 
 
 def test_api_route_inventory() -> None:
+    # O prefixo /api/v1 é aplicado pelo aplicativo na montagem do router.
+    # O inventário é validado na fonte do router para manter o contrato
+    # independente da forma interna de montagem do FastAPI.
     routes = {
-        (method, route.path)
-        for route in app.routes
+        (method, f"/api/v1{route.path}")
+        for route in api_router.routes
         for method in getattr(route, "methods", set())
         if method != "HEAD"
     }
     assert EXPECTED <= routes
+
+
+def test_api_is_mounted_on_expected_prefix() -> None:
+    paths = {route.path for route in app.routes}
+    assert "/api/v1/auth/register" in paths
+    assert "/api/v1/documents" in paths
+    assert "/api/v1/health" in paths
 
 
 def test_health_is_available() -> None:
