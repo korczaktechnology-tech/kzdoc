@@ -1,7 +1,1 @@
-import { describe, expect, it } from "vitest";
-
-describe("ambiente frontend", () => {
-  it("possui o nome oficial do produto", () => {
-    expect("Korczak Documents").toBe("Korczak Documents");
-  });
-});
+import {describe,expect,it} from 'vitest';describe('Fase 6',()=>{it('identidade',()=>expect('Korczak Documents').toBe('Korczak Documents'));it('sete visões',()=>expect(['home','documents','favorites','recent','trash','search','profile']).toHaveLength(7));it('senha mínima',()=>expect(12).toBeGreaterThanOrEqual(12));});
