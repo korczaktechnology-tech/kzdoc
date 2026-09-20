@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from ..errors import AppError, NotFoundError, ValidationError
 from ..repositories import api as repo
-from ..security import create_session, hash_password, verify_password
+from ..security import create_session, hash_password, validate_password_policy, verify_password, revoke_session
 from ..database.connection import get_database
 
 
@@ -14,12 +14,18 @@ def clean_user(user: dict) -> dict:
     )}
 
 
+def normalize_email(email: str) -> str:
+    return email.strip().casefold()
+
+
 async def register(data):
-    if await repo.find_user_by_email(data.email):
+    email = normalize_email(data.email)
+    validate_password_policy(data.password, email, data.name)
+    if await repo.find_user_by_email(email):
         raise AppError("E-mail já cadastrado", "email_already_exists", 409)
     user = await repo.create_user({
-        "name": data.name, "email": data.email, "phone": data.phone,
-        "password_hash": hash_password(data.password),
+        "name": data.name.strip(), "email": email, "phone": data.phone,
+        "password_hash": hash_password(data.password), "role": "user", "status": "active",
     })
     token, expires_at = await create_session(user["id"])
     await repo.log_event(user["id"], "auth.register", {"user_id": user["id"]})
@@ -27,7 +33,8 @@ async def register(data):
 
 
 async def login(data):
-    user = await repo.find_user_by_email(data.email)
+    email = normalize_email(data.email)
+    user = await repo.find_user_by_email(email)
     if not user or not verify_password(data.password, user["password_hash"]):
         raise AppError("Credenciais inválidas", "invalid_credentials", 401)
     token, expires_at = await create_session(user["id"])
@@ -36,13 +43,13 @@ async def login(data):
 
 
 async def logout(token: str):
-    await get_database()["sessoes"].delete_one({"token_hash": __import__("hashlib").sha256(token.encode()).hexdigest()})
+    await revoke_session(token)
 
 
 async def request_recovery(email: str):
-    user = await repo.find_user_by_email(email)
+    user = await repo.find_user_by_email(normalize_email(email))
     if user:
-        await repo.log_event(user["id"], "auth.recovery_requested", {"email": user["email"]})
+        await repo.log_event(user["id"], "auth.recovery_requested", {"user_id": user["id"]})
     return {"message": "Se a conta existir, as instruções de recuperação serão encaminhadas."}
 
 
