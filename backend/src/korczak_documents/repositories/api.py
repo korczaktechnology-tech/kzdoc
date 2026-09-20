@@ -8,6 +8,11 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _redact_payload(payload: dict) -> dict:
+    sensitive = ("password", "token", "secret", "authorization", "cookie", "api_key", "content")
+    return {k: ("[REDACTED]" if any(term in k.casefold() for term in sensitive) else v) for k, v in payload.items()}
+
+
 async def find_user_by_email(email: str):
     return await get_database()["usuarios"].find_one({"email": email.lower().strip()})
 
@@ -25,7 +30,8 @@ async def create_user(data: dict):
         "password_hash": data["password_hash"],
         "email_verified": False,
         "phone_verified": False,
-        "role": "user",
+        "role": data.get("role", "user"),
+        "status": data.get("status", "active"),
         "created_at": now(),
         "updated_at": now(),
     }
@@ -41,16 +47,10 @@ async def update_user(user_id: str, changes: dict):
 
 async def create_document(owner_id: str, data: dict):
     document = {
-        "id": str(uuid4()),
-        "owner_id": owner_id,
-        "name": data["name"].strip(),
-        "document_type": data["document_type"].strip(),
-        "folder_id": data.get("folder_id"),
-        "current_version_id": None,
-        "status": "active",
-        "favorite_user_ids": [],
-        "created_at": now(),
-        "updated_at": now(),
+        "id": str(uuid4()), "owner_id": owner_id, "name": data["name"].strip(),
+        "document_type": data["document_type"].strip(), "folder_id": data.get("folder_id"),
+        "current_version_id": None, "status": "active", "favorite_user_ids": [],
+        "created_at": now(), "updated_at": now(),
     }
     await get_database()["documentos"].insert_one(document)
     return document
@@ -75,14 +75,7 @@ async def update_document(document_id: str, changes: dict):
 
 
 async def create_version(document_id: str, author_id: str, content: str | None, number: int):
-    version = {
-        "id": str(uuid4()),
-        "document_id": document_id,
-        "version_number": number,
-        "author_id": author_id,
-        "content": content,
-        "created_at": now(),
-    }
+    version = {"id": str(uuid4()), "document_id": document_id, "version_number": number, "author_id": author_id, "content": content, "created_at": now()}
     await get_database()["versoes"].insert_one(version)
     await update_document(document_id, {"current_version_id": version["id"]})
     return version
@@ -97,14 +90,7 @@ async def list_versions(document_id: str):
 
 
 async def create_folder(owner_id: str, data: dict):
-    folder = {
-        "id": str(uuid4()),
-        "owner_id": owner_id,
-        "parent_id": data.get("parent_id"),
-        "name": data["name"].strip(),
-        "created_at": now(),
-        "updated_at": now(),
-    }
+    folder = {"id": str(uuid4()), "owner_id": owner_id, "parent_id": data.get("parent_id"), "name": data["name"].strip(), "created_at": now(), "updated_at": now()}
     await get_database()["pastas"].insert_one(folder)
     return folder
 
@@ -128,13 +114,7 @@ async def delete_folder(folder_id: str):
 
 
 async def log_event(user_id: str | None, event_type: str, payload: dict):
-    await get_database()["eventos"].insert_one({
-        "id": str(uuid4()),
-        "user_id": user_id,
-        "type": event_type,
-        "payload": payload,
-        "created_at": now(),
-    })
+    await get_database()["eventos"].insert_one({"id": str(uuid4()), "user_id": user_id, "type": event_type, "payload": _redact_payload(payload), "created_at": now()})
 
 
 async def list_events(user_id: str, filters: dict, skip: int, limit: int):
