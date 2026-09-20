@@ -1,0 +1,5 @@
+import type {ReactNode} from 'react';
+export const Icon=({name}:{name:string})=><span className="icon" aria-hidden="true">{({home:'⌂',file:'▤',star:'☆',clock:'◷',trash:'⌫',search:'⌕',bell:'♢',settings:'⚙',user:'●',plus:'+'} as Record<string,string>)[name]||'•'}</span>;
+export function Button({children,variant='primary',...p}:{children:ReactNode;variant?:string;[key:string]:unknown}){return <button className={'button button-'+variant} {...p}>{children}</button>}
+export function Modal({title,children,onClose}:{title:string;children:ReactNode;onClose:()=>void}){return <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true"><header><h2>{title}</h2><button className="icon-button" onClick={onClose}>×</button></header>{children}</section></div>}
+export function StatePanel({title,message}:{title:string;message:string}){return <div className="state-panel"><div className="state-mark">○</div><h3>{title}</h3><p>{message}</p></div>}
