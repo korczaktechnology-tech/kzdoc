@@ -3,7 +3,7 @@
 
 **Fase:** 2 de 30  
 **Itens:** 29–44  
-**Estado:** implementada
+**Estado:** implementada e preparada para validação operacional
 
 ### Matriz
 
@@ -44,4 +44,4 @@ O módulo de configurações utiliza variáveis de ambiente e possui configuraç
 
 ### Critério de conclusão
 
-Os itens 29–44 possuem estrutura e código inicial versionados. A execução dos testes e do CI permanece como validação operacional da fase.
+Os itens 29–44 possuem estrutura e código inicial versionados. Foi adicionada uma suíte de testes para as camadas e um workflow próprio da Fase 2 para validar backend, frontend, build e testes em ambiente limpo. A fase só será marcada como operacionalmente concluída após a execução bem-sucedida desse workflow.
