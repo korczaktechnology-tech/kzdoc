@@ -20,7 +20,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -28,7 +28,7 @@ jobs:
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[test]"
+          pip install -e ".[test]"\n      - name: Verificar importacao do backend\n        working-directory: backend\n        run: python -c "from korczak_documents.main import app; print(app.title)"
       - name: Testes unitários e contrato
         working-directory: backend
         run: pytest -m "not integration"
