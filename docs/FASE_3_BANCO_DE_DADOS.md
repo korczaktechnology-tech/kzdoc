@@ -4,7 +4,7 @@
 **Fase:** 3 de 30  
 **Itens:** 45–59  
 **Banco:** `KZDocs`  
-**Estado:** implementada e preparada para validação operacional
+**Estado:** implementação completa, aguardando validação operacional final
 
 ### Coleções
 
@@ -33,3 +33,15 @@ Foram criados scripts de backup e restauração com `mongodump` e `mongorestore`
 ### Validação
 
 A suíte da Fase 3 valida a configuração, o catálogo de coleções, os índices, o bootstrap/seed e os scripts sem exigir uma credencial real no CI. A validação contra um deployment MongoDB real depende da configuração de `MONGODB_URI` no ambiente de execução.
+
+### Modelos e integridade
+
+Os contratos de dados da aplicação estão definidos em modelos Pydantic para usuários, documentos, versões, pastas, etiquetas, sessões, eventos e notificações. Regras adicionais garantem referências obrigatórias, propriedade de documentos, hierarquia de pastas e numeração válida de versões.
+
+### Evolução do banco
+
+A versão inicial de migração é registrada na coleção `migrations`, permitindo evoluir a estrutura de dados sem depender de alterações manuais não rastreadas.
+
+### Backup e restauração verificáveis
+
+Os comandos de backup/restauração também possuem cobertura automatizada para garantir que os executáveis e namespaces corretos sejam utilizados. A recuperação física de um dump requer as ferramentas `mongodump` e `mongorestore` no ambiente de execução.
