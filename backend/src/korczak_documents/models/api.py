@@ -1,0 +1,133 @@
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class APIModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class RegisterRequest(APIModel):
+    name: str = Field(min_length=1, max_length=160)
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=8, max_length=128)
+    phone: str | None = Field(default=None, max_length=40)
+
+
+class LoginRequest(APIModel):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class RecoveryRequest(APIModel):
+    email: str = Field(min_length=3, max_length=320)
+
+
+class UserUpdateRequest(APIModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    phone: str | None = Field(default=None, max_length=40)
+
+
+class UserResponse(APIModel):
+    id: str
+    name: str
+    email: str
+    phone: str | None
+    email_verified: bool
+    phone_verified: bool
+    role: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class SessionResponse(APIModel):
+    token: str
+    expires_at: datetime
+    user: UserResponse
+
+
+class DocumentCreateRequest(APIModel):
+    name: str = Field(min_length=1, max_length=255)
+    document_type: str = Field(min_length=1, max_length=80)
+    folder_id: str | None = None
+    content: str | None = None
+
+
+class DocumentUpdateRequest(APIModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    document_type: str | None = Field(default=None, min_length=1, max_length=80)
+    folder_id: str | None = None
+    status: str | None = Field(default=None, min_length=1, max_length=40)
+
+
+class DocumentResponse(APIModel):
+    id: str
+    owner_id: str
+    name: str
+    document_type: str
+    folder_id: str | None
+    current_version_id: str | None
+    status: str
+    favorite: bool = False
+    created_at: datetime
+    updated_at: datetime
+
+
+class VersionCreateRequest(APIModel):
+    content: str | None = None
+
+
+class VersionResponse(APIModel):
+    id: str
+    document_id: str
+    version_number: int
+    author_id: str
+    content: str | None
+    created_at: datetime
+
+
+class FolderCreateRequest(APIModel):
+    name: str = Field(min_length=1, max_length=255)
+    parent_id: str | None = None
+
+
+class FolderUpdateRequest(APIModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    parent_id: str | None = None
+
+
+class FolderResponse(APIModel):
+    id: str
+    owner_id: str
+    parent_id: str | None
+    name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class TagCreateRequest(APIModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class GroupCreateRequest(APIModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+class PermissionRequest(APIModel):
+    role: str = Field(min_length=1, max_length=40)
+    actions: list[str] = Field(default_factory=list)
+
+
+class NotificationResponse(APIModel):
+    id: str
+    user_id: str
+    type: str
+    message: str
+    read: bool
+    created_at: datetime
+
+
+class PaginatedResponse(APIModel):
+    items: list[dict]
+    total: int
+    page: int
+    page_size: int
