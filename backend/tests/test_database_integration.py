@@ -1,35 +1,29 @@
 import os
 from datetime import datetime, timezone
-
 import pytest
-
 from korczak_documents.database.bootstrap import bootstrap_database
 from korczak_documents.database.connection import get_database
-from korczak_documents.database.seed import seed_initial_data
 
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_mongodb_bootstrap_and_recovery_round_trip() -> None:
+async def test_mongodb_bootstrap_indexes_seed_and_recovery_round_trip() -> None:
     if not os.getenv("MONGODB_URI"):
         pytest.skip("MONGODB_URI não configurado")
-
     await bootstrap_database()
-    await seed_initial_data()
-
     database = get_database()
-    collection = database["eventos"]
+    assert database.name == "KZDocs"
+    collections = await database.list_collection_names()
+    assert "eventos" in collections
+    assert "migrations" in collections
+    indexes = await database["documentos"].index_information()
+    assert any("owner_id" in str(index.get("key")) for index in indexes.values())
     marker = {"type": "test.recovery", "created_at": datetime.now(timezone.utc)}
-
-    await collection.insert_one(marker)
-    saved = await collection.find_one({"type": "test.recovery"})
+    await database["eventos"].insert_one(marker)
+    saved = await database["eventos"].find_one({"type": "test.recovery"})
     assert saved is not None
-
-    await collection.delete_one({"_id": saved["_id"]})
-    assert await collection.find_one({"_id": saved["_id"]}) is None
-
-    await collection.insert_one(saved)
-    restored = await collection.find_one({"_id": saved["_id"]})
-    assert restored is not None
-
-    await collection.delete_one({"_id": saved["_id"]})
+    await database["eventos"].delete_one({"_id": saved["_id"]})
+    assert await database["eventos"].find_one({"_id": saved["_id"]}) is None
+    await database["eventos"].insert_one(saved)
+    assert await database["eventos"].find_one({"_id": saved["_id"]}) is not None
+    await database["eventos"].delete_one({"_id": saved["_id"]})
