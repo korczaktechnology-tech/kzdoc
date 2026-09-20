@@ -18,6 +18,7 @@ def test_expected_collections_are_defined() -> None:
         "sessoes",
         "eventos",
         "notificacoes",
+        "grupos",
     )
 
 
