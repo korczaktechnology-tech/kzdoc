@@ -71,3 +71,9 @@ def test_request_validation_is_strict() -> None:
         assert "extra" in str(exc)
     else:
         raise AssertionError("Campos desconhecidos deveriam ser rejeitados")
+
+
+def test_validation_error_uses_standard_contract() -> None:
+    response = TestClient(app).post("/api/v1/auth/register", json={"name": "", "email": "bad", "password": "x"})
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
