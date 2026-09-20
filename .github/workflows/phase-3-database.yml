@@ -47,6 +47,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[test]"
+      - name: Instalar ferramentas MongoDB
+        run: |
+          curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-8.0.gpg
+          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-database-tools
       - name: Testar conexão, bootstrap, índices e recuperação
         working-directory: backend
         run: pytest -m integration
