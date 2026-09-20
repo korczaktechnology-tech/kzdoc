@@ -11,6 +11,7 @@ INDEX_DEFINITIONS = {
     "sessoes": [("user_id", ASCENDING), ("expires_at", ASCENDING)],
     "eventos": [("user_id", ASCENDING), ("created_at", DESCENDING)],
     "notificacoes": [("user_id", ASCENDING), ("read", ASCENDING), ("created_at", DESCENDING)],
+    "grupos": [("owner_id", ASCENDING), ("name", ASCENDING)],
 }
 
 
