@@ -55,7 +55,7 @@ jobs:
           sudo install /tmp/mongodb-database-tools-ubuntu2404-x86_64-100.12.2/bin/mongorestore /usr/local/bin/mongorestore
       - name: Testar conexão, bootstrap, índices e recuperação real
         working-directory: backend
-        run: pytest -m integration
+        run: pytest tests/test_database_integration.py -m integration
         env:
           MONGODB_URI: mongodb://localhost:27017
           MONGODB_DATABASE: KZDocs
