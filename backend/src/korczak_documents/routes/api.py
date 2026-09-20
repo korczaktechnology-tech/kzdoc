@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Header, Query, status
+from datetime import datetime, timezone, timedelta
 
 from ..dependencies import current_user
 from ..errors import AppError, NotFoundError, ValidationError
@@ -150,6 +151,18 @@ async def create_version(document_id: str, payload: VersionCreateRequest, user=D
     return version
 
 
+@router.post("/documents/{document_id}/versions/{version_id}/restore")
+async def restore_version(document_id: str, version_id: str, user=Depends(current_user)):
+    await service.document_or_404(document_id, user["id"])
+    version = await get_database()["versoes"].find_one({"id": version_id, "document_id": document_id})
+    if not version:
+        raise NotFoundError("Versão não encontrada")
+    new_version = await repo.create_version(document_id, user["id"], version.get("content"), await service.version_number(document_id))
+    await repo.update_document(document_id, {"current_version_id": new_version["id"]})
+    await repo.log_event(user["id"], "document.version_restored", {"document_id": document_id, "source_version_id": version_id, "new_version_id": new_version["id"]})
+    return new_version
+
+
 @router.get("/folders", response_model=list[FolderResponse])
 async def folders(user=Depends(current_user)):
     return await repo.list_folders(user["id"])
@@ -274,7 +287,16 @@ async def search(q: str = Query("", max_length=255), folder_id: str | None = Non
         filters["$or"] = [{"name": {"$regex": q.strip(), "$options": "i"}}, {"document_type": {"$regex": q.strip(), "$options": "i"}}]
     if folder_id:
         filters["folder_id"] = folder_id
-    items = await get_database()["documentos"].find(filters).sort("updated_at", -1).limit(100).to_list(length=100)
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            date_filter["$gte"] = datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc)
+        if date_to:
+            date_filter["$lt"] = datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc) + timedelta(days=1)
+        filters["updated_at"] = date_filter
+    sort_field = "name" if sort.startswith("name_") else "updated_at"
+    sort_dir = 1 if sort.endswith("_asc") else -1
+    items = await get_database()["documentos"].find(filters).sort(sort_field, sort_dir).limit(100).to_list(length=100)
     return [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
 
 
