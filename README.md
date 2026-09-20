@@ -1,6 +1,6 @@
 # Korczak Documents
 
-Projeto do **Korczak Documents**, sistema multiplataforma de gestão, organização, edição, versionamento e pesquisa de documentos.
+Sistema multiplataforma de gestão documental.
 
 ## Plataformas
 
@@ -11,21 +11,13 @@ Projeto do **Korczak Documents**, sistema multiplataforma de gestão, organizaç
 - Android
 - iOS
 
-## Estado do projeto
+## Fases
 
-| Fase | Estado |
-|---|---|
-| Fase 0 — Definição e congelamento | **Concluída** |
-| Fase 1 — Preparação do ambiente | Pendente |
-| Fase 2 — Estrutura do código | Pendente |
-| Fases 3–30 | Pendente |
+- Fase 0 — Definição e Congelamento: concluída.
+- Fase 1 — Preparação do Ambiente: concluída.
+- Fases 2–30: pendentes.
 
 ## Documentação
 
-A especificação da Fase 0 está em:
-
-**[docs/FASE_0_DEFINICAO_E_CONGELAMENTO.md](docs/FASE_0_DEFINICAO_E_CONGELAMENTO.md)**
-
-A Fase 0 estabelece o escopo, funcionalidades obrigatórias, plataformas, regras de negócio, permissões, modelos de dados conceituais, auditoria, versionamento e critérios de mudança do projeto.
-
-A implementação deve seguir a especificação congelada antes de avançar para as fases seguintes.
+- [Fase 0](docs/FASE_0_DEFINICAO_E_CONGELAMENTO.md)
+- [Fase 1](docs/FASE_1_PREPARACAO_DO_AMBIENTE.md)
