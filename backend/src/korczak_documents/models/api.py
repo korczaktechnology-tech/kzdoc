@@ -31,6 +31,11 @@ class UserUpdateRequest(APIModel):
     phone: str | None = Field(default=None, max_length=40)
 
 
+class AdminUserUpdateRequest(APIModel):
+    role: str | None = Field(default=None, min_length=1, max_length=40)
+    status: str | None = Field(default=None, min_length=1, max_length=40)
+
+
 class UserResponse(ResponseModel):
     id: str
     name: str
@@ -74,6 +79,7 @@ class DocumentResponse(ResponseModel):
     favorite: bool = False
     created_at: datetime
     updated_at: datetime
+    content: str | None = None
 
 
 class VersionCreateRequest(APIModel):
