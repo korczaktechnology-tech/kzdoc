@@ -13,6 +13,10 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={"error": {"code": exc.code, "message": exc.message}},
         )
 
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+        return JSONResponse(status_code=500, content={"error": {"code": "internal_error", "message": "Erro interno do servidor"}})
+
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
