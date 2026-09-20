@@ -281,7 +281,7 @@ async def trash(user=Depends(current_user)):
 
 
 @router.get("/search", response_model=list[DocumentResponse])
-async def search(q: str = Query("", max_length=255), folder_id: str | None = None, status_filter: str | None = None, user=Depends(current_user)):
+async def search(q: str = Query("", max_length=255), folder_id: str | None = None, status_filter: str | None = None, date_from: str | None = None, date_to: str | None = None, sort: str = "updated_desc", user=Depends(current_user)):
     filters = {"owner_id": user["id"], "status": status_filter or {"$ne": "deleted"}}
     if q.strip():
         filters["$or"] = [{"name": {"$regex": q.strip(), "$options": "i"}}, {"document_type": {"$regex": q.strip(), "$options": "i"}}]
