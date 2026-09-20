@@ -1,18 +1,37 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+
 from .config.settings import get_settings
 from .errors import register_exception_handlers
 from .logging import configure_logging, get_logger
+from .rate_limit import enforce_rate_limit
 from .routes import router
 
 settings = get_settings()
 configure_logging(settings)
 logger = get_logger(__name__)
 
-app = FastAPI(
-    title=settings.app_name,
-    version="0.2.0",
-    description="API do Korczak Documents.",
-)
+app = FastAPI(title=settings.app_name, version="0.3.0", description="API do Korczak Documents.")
+
+allowed_origins = [settings.frontend_url] if settings.frontend_url else []
+app.add_middleware(CORSMiddleware, allow_origins=allowed_origins, allow_credentials=False, allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    path = request.url.path
+    if path in {"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/recovery"}:
+        client = request.client.host if request.client else "unknown"
+        enforce_rate_limit(client, path)
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if settings.is_production:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 register_exception_handlers(app)
 app.include_router(router, prefix="/api/v1")
 
