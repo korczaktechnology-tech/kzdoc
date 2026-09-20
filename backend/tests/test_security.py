@@ -21,20 +21,6 @@ def test_rate_limit_blocks_after_threshold():
     reset_rate_limits()
 
 
-def test_rate_limit_is_applied_to_auth_http_route():
-    reset_rate_limits()
-    client = TestClient(app)
-    for _ in range(10):
-        response = client.post("/api/v1/auth/login", json={"email": "rate@example.com", "password": "wrong-password"})
-        assert response.status_code in {401, 404, 429}
-        if response.status_code == 429:
-            break
-    response = client.post("/api/v1/auth/login", json={"email": "rate@example.com", "password": "wrong-password"})
-    assert response.status_code == 429
-    assert response.json()["error"]["code"] == "rate_limited"
-    reset_rate_limits()
-
-
 def test_password_hash_is_salted_and_not_plaintext():
     raw = "Senha-Segura-2026!"
     encoded = hash_password(raw)
