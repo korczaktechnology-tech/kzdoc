@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse
 
 from .config.settings import get_settings
-from .errors import register_exception_handlers
+from .errors import AppError, register_exception_handlers
 from .logging import configure_logging, get_logger
 from .rate_limit import enforce_rate_limit
 from .routes import router
