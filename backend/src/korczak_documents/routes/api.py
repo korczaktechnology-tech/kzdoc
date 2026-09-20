@@ -63,6 +63,21 @@ async def users(user=Depends(current_user)):
     return [service.clean_user(item) for item in items]
 
 
+@router.patch("/users/{user_id}", response_model=UserResponse)
+async def admin_update_user(user_id: str, payload: AdminUserUpdateRequest, user=Depends(current_user)):
+    if user["role"] != "admin":
+        raise AppError("Acesso administrativo necessário", "forbidden", 403)
+    target = await repo.find_user(user_id)
+    if not target:
+        raise NotFoundError("Usuário não encontrado")
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        return service.clean_user(target)
+    updated = await repo.update_user(user_id, changes)
+    await repo.log_event(user["id"], "admin.user_updated", {"target_user_id": user_id, "fields": list(changes)})
+    return service.clean_user(updated)
+
+
 @router.get("/documents", response_model=list[DocumentResponse])
 async def documents(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), user=Depends(current_user)):
     skip, limit = service.page_values(page, page_size)
@@ -83,7 +98,8 @@ async def create_document(payload: DocumentCreateRequest, user=Depends(current_u
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document(document_id: str, user=Depends(current_user)):
     document = await service.document_or_404(document_id, user["id"])
-    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []))
+    version = await get_database()["versoes"].find_one({"id": document.get("current_version_id")}) if document.get("current_version_id") else None
+    return DocumentResponse(**document, content=version.get("content") if version else None, favorite=user["id"] in document.get("favorite_user_ids", []))
 
 
 @router.patch("/documents/{document_id}", response_model=DocumentResponse)
@@ -233,10 +249,16 @@ async def favorites(user=Depends(current_user)):
     return [DocumentResponse(**item, favorite=True) for item in items]
 
 
-@router.get("/recent")
+@router.get("/recent", response_model=list[DocumentResponse])
 async def recent(user=Depends(current_user)):
     events = await get_database()["eventos"].find({"user_id": user["id"], "type": "document.opened"}).sort("created_at", -1).limit(50).to_list(length=50)
-    return [without_mongo_id(item) for item in events]
+    ids=[]
+    for event in events:
+        doc_id=event.get("payload",{}).get("document_id")
+        if doc_id and doc_id not in ids: ids.append(doc_id)
+    docs=await get_database()["documentos"].find({"id":{"$in":ids},"owner_id":user["id"],"status":{"$ne":"deleted"}}).to_list(length=50)
+    by_id={d["id"]:d for d in docs}
+    return [DocumentResponse(**by_id[i], favorite=user["id"] in by_id[i].get("favorite_user_ids",[])) for i in ids if i in by_id]
 
 
 @router.get("/trash", response_model=list[DocumentResponse])
@@ -318,9 +340,10 @@ async def set_permissions(document_id: str, payload: PermissionRequest, user=Dep
 
 
 @router.get("/audit")
-async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), event_type: str | None = None, user=Depends(current_user)):
+async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), event_type: str | None = None, document_id: str | None = None, user=Depends(current_user)):
     skip, limit = service.page_values(page, page_size)
     filters = {"type": event_type} if event_type else {}
+    if document_id: filters["payload.document_id"] = document_id
     items, total = await repo.list_events(user["id"], filters, skip, limit)
     return {"items": [without_mongo_id(item) for item in items], "total": total, "page": page, "page_size": page_size}
 
