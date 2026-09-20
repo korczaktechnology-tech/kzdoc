@@ -5,21 +5,29 @@ import subprocess
 def create_backup(uri: str, database: str, output_dir: str) -> str:
     path = Path(output_dir)
     path.mkdir(parents=True, exist_ok=True)
+    archive = path / f"{database}.archive"
     subprocess.run(
-        ["mongodump", f"--uri={uri}", f"--db={database}", f"--out={path}"],
+        [
+            "mongodump",
+            f"--uri={uri}",
+            f"--db={database}",
+            f"--archive={archive}",
+        ],
         check=True,
         capture_output=True,
         text=True,
     )
-    return str(path / database)
+    if not archive.is_file() or archive.stat().st_size == 0:
+        raise RuntimeError("mongodump não produziu um arquivo de backup válido")
+    return str(archive)
 
 
 def restore_backup(uri: str, database: str, backup_path: str) -> None:
-    source = Path(backup_path)
-    if source.name != database:
-        raise ValueError("O caminho do backup deve apontar para a pasta do banco informado")
+    archive = Path(backup_path)
+    if archive.suffix != ".archive" or not archive.is_file():
+        raise ValueError("O caminho do backup deve apontar para um arquivo .archive válido")
     subprocess.run(
-        ["mongorestore", f"--uri={uri}", "--drop", str(source)],
+        ["mongorestore", f"--uri={uri}", "--drop", f"--archive={archive}"],
         check=True,
         capture_output=True,
         text=True,
