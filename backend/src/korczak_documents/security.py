@@ -5,8 +5,8 @@ import hmac
 import secrets
 from uuid import uuid4
 
-from ..database.connection import get_database
-from ..errors import AppError, NotFoundError
+from .database.connection import get_database
+from .errors import AppError, NotFoundError
 
 
 SESSION_HOURS = 24
