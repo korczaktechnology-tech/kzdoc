@@ -18,4 +18,4 @@ INDEX_DEFINITIONS = {
 async def ensure_indexes(database) -> None:
     for collection in COLLECTIONS:
         await database[collection].create_index(INDEX_DEFINITIONS[collection])
-    await database["sessoes"].create_index("expires_at", expireAfterSeconds=0, name="session_expiry")
+    await database["usuarios"].create_index("email", unique=True, name="user_email_unique")\n    await database["sessoes"].create_index("expires_at", expireAfterSeconds=0, name="session_expiry")
