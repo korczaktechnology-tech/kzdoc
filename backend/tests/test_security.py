@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from korczak_documents.database.bootstrap import bootstrap_database
 from korczak_documents.database.connection import get_database
 from korczak_documents.main import app
-from korczak_documents.rate_limit import enforce_rate_limit, reset_rate_limits
+from korczak_documents.rate_limit import reset_rate_limits
 from korczak_documents.security import hash_password, validate_password_policy, verify_password
 
 
