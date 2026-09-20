@@ -36,7 +36,7 @@ jobs:
           MONGODB_DATABASE: KZDocs
       - name: Teste de integração da API
         working-directory: backend
-        run: pytest -m integration
+        run: pytest tests/test_api_integration.py -m integration
         env:
           MONGODB_URI: mongodb://localhost:27017
           MONGODB_DATABASE: KZDocs
