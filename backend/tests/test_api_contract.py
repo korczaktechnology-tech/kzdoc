@@ -64,7 +64,7 @@ def test_api_route_inventory() -> None:
 
 
 def test_api_is_mounted_on_expected_prefix() -> None:
-    paths = {route.path for route in app.routes}
+    paths = {route.path for route in app.routes if hasattr(route, "path")}
     assert "/api/v1/auth/register" in paths
     assert "/api/v1/documents" in paths
     assert "/api/v1/health" in paths
