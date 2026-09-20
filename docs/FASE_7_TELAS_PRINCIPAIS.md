@@ -37,3 +37,4 @@ A validação automática é realizada pelo workflow da Fase 7 com instalação 
 ## Observação
 
 A Fase 8 continuará aprofundando o editor de documentos. Isso não significa que o editor da Fase 7 seja apenas uma tela vazia: nesta fase ele já permite abrir, editar e salvar conteúdo e criar versões. Recursos avançados do editor pertencem à Fase 8, conforme a checklist oficial.
+
