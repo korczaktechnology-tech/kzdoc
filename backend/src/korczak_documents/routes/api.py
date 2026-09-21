@@ -389,6 +389,13 @@ async def create_group(payload: GroupCreateRequest, user=Depends(current_user)):
     return group
 
 
+@router.delete("/groups/{group_id}")
+async def delete_group(group_id: str, user=Depends(current_user)):
+    result=await get_database()["grupos"].delete_one({"id":group_id,"owner_id":user["id"]})
+    if result.deleted_count==0: raise NotFoundError("Grupo não encontrado")
+    await repo.log_event(user["id"],"group.deleted",{"group_id":group_id})
+    return {"message":"Grupo removido"}
+
 @router.post("/groups/{group_id}/members/{member_id}")
 async def add_group_member(group_id: str, member_id: str, user=Depends(current_user)):
     group = await get_database()["grupos"].find_one({"id": group_id, "owner_id": user["id"]})
@@ -414,20 +421,47 @@ async def remove_group_member(group_id: str, member_id: str, user=Depends(curren
 
 @router.get("/permissions/{document_id}")
 async def permissions(document_id: str, user=Depends(current_user)):
-    document = await service.document_or_404(document_id, user["id"])
-    policy = document.get("permissions") or {"role": user["role"], "actions": ["read", "write", "delete", "share"]}
-    return {"document_id": document_id, "owner_id": document["owner_id"], "role": policy["role"], "actions": policy["actions"]}
-
+    document = await service.document_or_404(document_id, user["id"], "read")
+    policy = await service.permission_policy(document, user["id"])
+    return {"document_id": document_id, "owner_id": document["owner_id"], **policy}
 
 @router.put("/permissions/{document_id}")
 async def set_permissions(document_id: str, payload: PermissionRequest, user=Depends(current_user)):
-    document = await service.document_or_404(document_id, user["id"])
-    if user["role"] != "admin":
-        raise AppError("Acesso administrativo necessário", "forbidden", 403)
-    await get_database()["documentos"].update_one({"id": document_id}, {"$set": {"permissions": {"role": payload.role, "actions": payload.actions}}})
-    await repo.log_event(user["id"], "permission.changed", {"document_id": document_id, "role": payload.role})
-    return {"document_id": document_id, "role": payload.role, "actions": payload.actions}
+    document = await service.document_or_404(document_id, user["id"], "share")
+    if user["role"] != "admin" and document["owner_id"] != user["id"]:
+        raise AppError("Somente o proprietário ou administrador pode alterar permissões", "forbidden", 403)
+    valid_actions={"read","write","delete","share"}
+    if not set(payload.actions).issubset(valid_actions):
+        raise ValidationError("Permissão inválida")
+    for uid in payload.user_ids:
+        if not await repo.find_user(uid): raise NotFoundError("Usuário de permissão não encontrado")
+    for gid in payload.group_ids:
+        if not await get_database()["grupos"].find_one({"id":gid}): raise NotFoundError("Grupo de permissão não encontrado")
+    policy={"role":payload.role,"actions":payload.actions,"user_ids":payload.user_ids,"group_ids":payload.group_ids}
+    await get_database()["documentos"].update_one({"id":document_id},{"$set":{"permissions":policy}})
+    await repo.log_event(user["id"], "permission.changed", {"document_id":document_id,"role":payload.role,"user_ids":payload.user_ids,"group_ids":payload.group_ids})
+    return {"document_id":document_id,"owner_id":document["owner_id"],**policy}
 
+@router.get("/folder-permissions/{folder_id}")
+async def folder_permissions(folder_id: str, user=Depends(current_user)):
+    folder=await service.folder_or_404(folder_id,user["id"],"read")
+    return {"folder_id":folder_id,"owner_id":folder["owner_id"],**await service.permission_policy(folder,user["id"])}
+
+@router.put("/folder-permissions/{folder_id}")
+async def set_folder_permissions(folder_id: str, payload: PermissionRequest, user=Depends(current_user)):
+    folder=await service.folder_or_404(folder_id,user["id"],"share")
+    if user["role"] != "admin" and folder["owner_id"] != user["id"]:
+        raise AppError("Somente o proprietário ou administrador pode alterar permissões","forbidden",403)
+    valid_actions={"read","write","delete","share"}
+    if not set(payload.actions).issubset(valid_actions): raise ValidationError("Permissão inválida")
+    for uid in payload.user_ids:
+        if not await repo.find_user(uid): raise NotFoundError("Usuário de permissão não encontrado")
+    for gid in payload.group_ids:
+        if not await get_database()["grupos"].find_one({"id":gid}): raise NotFoundError("Grupo de permissão não encontrado")
+    policy={"role":payload.role,"actions":payload.actions,"user_ids":payload.user_ids,"group_ids":payload.group_ids}
+    await get_database()["pastas"].update_one({"id":folder_id},{"$set":{"permissions":policy}})
+    await repo.log_event(user["id"],"folder.permission.changed",{"folder_id":folder_id})
+    return {"folder_id":folder_id,"owner_id":folder["owner_id"],**policy}
 
 @router.get("/audit")
 async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), event_type: str | None = None, document_id: str | None = None, user=Depends(current_user)):
