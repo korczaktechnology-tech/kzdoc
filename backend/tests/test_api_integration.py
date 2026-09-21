@@ -159,7 +159,6 @@ async def test_api_end_to_end() -> None:
     assert client.patch(f"/api/v1/users/{manager_target['id']}", headers=manager_headers, json={"name":"Usuário editado pelo gestor"}).status_code == 200
     assert client.patch(f"/api/v1/users/{manager_target['id']}", headers=manager_headers, json={"status":"inactive"}).status_code == 200
     assert client.post("/api/v1/groups", headers=manager_headers, json={"name":"Grupo do gestor"}).status_code == 201
-    assert client.post("/api/v1/groups", headers=second_headers if "second_headers" in locals() else headers, json={"name":"placeholder"}).status_code in {201,403}
     assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 200
     manager_admin_attempt = client.post("/api/v1/users", headers=manager_headers, json={"name":"Não permitido","email":f"nao-admin-{uuid4().hex}@example.com","password":"Korczak-Fase11-2026!","role":"admin"})
     assert manager_admin_attempt.status_code == 403
@@ -179,6 +178,15 @@ async def test_api_end_to_end() -> None:
     second_email = f"phase4-other-{uuid4().hex}@example.com"
     second = client.post("/api/v1/auth/register", json={"name": "Outro", "email": second_email, "password": password})
     second_headers = {"Authorization": f"Bearer {second.json()['token']}"}
+    group_acl = client.post("/api/v1/groups", headers=headers, json={"name":"ACL direta"})
+    assert group_acl.status_code == 201
+    group_acl_id = group_acl.json()["id"]
+    assert client.post(f"/api/v1/groups/{group_acl_id}/members/{second.json()['user']['id']}", headers=headers).status_code == 200
+    acl_doc = client.post("/api/v1/documents", headers=headers, json={"name":"Documento ACL grupo","document_type":"txt","content":"grupo pode ler"}).json()
+    assert client.put(f"/api/v1/permissions/{acl_doc['id']}", headers=headers, json={"role":"viewer","actions":["read"],"user_ids":[],"group_ids":[group_acl_id]}).status_code == 200
+    assert client.get(f"/api/v1/documents/{acl_doc['id']}", headers=second_headers).status_code == 200
+    assert client.delete(f"/api/v1/groups/{group_acl_id}/members/{second.json()['user']['id']}", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/documents/{acl_doc['id']}", headers=second_headers).status_code == 404
     assert client.get("/api/v1/users", headers=second_headers).status_code == 403
     assert client.get(f"/api/v1/documents/{document_id}", headers=second_headers).status_code == 404
     denied = client.get(f"/api/v1/permissions/{document_id}", headers=second_headers)
