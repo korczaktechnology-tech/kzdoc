@@ -85,6 +85,7 @@ class DocumentResponse(ResponseModel):
     current_version_id: str | None
     status: str
     favorite: bool = False
+    tag_names: list[str] = []
     created_at: datetime
     updated_at: datetime
     content: str | None = None
