@@ -111,7 +111,7 @@ async def create_document(payload: DocumentCreateRequest, user=Depends(current_u
 
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document(document_id: str, user=Depends(current_user)):
-    document = await service.document_or_404(document_id, user["id"], "write")
+    document = await service.document_or_404(document_id, user["id"], "read")
     version = await get_database()["versoes"].find_one({"id": document.get("current_version_id")}) if document.get("current_version_id") else None
     return DocumentResponse(**document, content=version.get("content") if version else None, favorite=user["id"] in document.get("favorite_user_ids", []))
 
