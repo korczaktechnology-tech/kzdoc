@@ -142,6 +142,8 @@ async def restore_document(document_id: str, user=Depends(current_user)):
 @router.delete("/documents/{document_id}/permanent")
 async def permanent_delete_document(document_id: str, user=Depends(current_user)):
     document = await service.document_or_404(document_id, user["id"])
+    if document.get("status") != "deleted":
+        raise AppError("Somente documentos na lixeira podem ser excluídos definitivamente.", "document_not_in_trash", 409)
     await get_database()["versoes"].delete_many({"document_id": document_id})
     await get_database()["documentos"].delete_one({"id": document_id})
     await repo.log_event(user["id"], "document.permanent_deleted", {"document_id": document_id})
