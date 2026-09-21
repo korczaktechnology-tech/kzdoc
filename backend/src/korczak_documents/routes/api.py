@@ -201,7 +201,7 @@ async def deleted_folders(user=Depends(current_user)):
 
 @router.post("/folders/{folder_id}/restore")
 async def restore_folder(folder_id: str, user=Depends(current_user)):
-    folder = await service.folder_or_404(folder_id, user["id"])
+    folder = await service.folder_or_404(folder_id, user["id"], "delete", allow_deleted=True)
     if folder.get("status") != "deleted":
         raise AppError("A pasta não está na lixeira.", "folder_not_deleted", 409)
     if folder.get("parent_id"):
