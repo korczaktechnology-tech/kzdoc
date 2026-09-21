@@ -118,6 +118,7 @@ class FolderResponse(ResponseModel):
     owner_id: str
     parent_id: str | None
     name: str
+    status: str = "active"
     created_at: datetime
     updated_at: datetime
 
