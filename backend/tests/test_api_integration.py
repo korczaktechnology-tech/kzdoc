@@ -182,14 +182,14 @@ async def test_api_end_to_end() -> None:
     assert client.post("/api/v1/groups", headers=second_headers, json={"name":"Grupo não autorizado"}).status_code == 403
     manager_admin_edit = client.patch(f"/api/v1/users/{user_id}", headers=manager_headers, json={"status":"inactive"})
     assert manager_admin_edit.status_code == 403
-    group_acl = client.post("/api/v1/groups", headers=headers, json={"name":"ACL direta"})
+    group_acl = client.post("/api/v1/groups", headers=manager_headers, json={"name":"ACL direta"})
     assert group_acl.status_code == 201
     group_acl_id = group_acl.json()["id"]
-    assert client.post(f"/api/v1/groups/{group_acl_id}/members/{second.json()['user']['id']}", headers=headers).status_code == 200
-    acl_doc = client.post("/api/v1/documents", headers=headers, json={"name":"Documento ACL grupo","document_type":"txt","content":"grupo pode ler"}).json()
-    assert client.put(f"/api/v1/permissions/{acl_doc['id']}", headers=headers, json={"role":"viewer","actions":["read"],"user_ids":[],"group_ids":[group_acl_id]}).status_code == 200
+    assert client.post(f"/api/v1/groups/{group_acl_id}/members/{second.json()['user']['id']}", headers=manager_headers).status_code == 200
+    acl_doc = client.post("/api/v1/documents", headers=manager_headers, json={"name":"Documento ACL grupo","document_type":"txt","content":"grupo pode ler"}).json()
+    assert client.put(f"/api/v1/permissions/{acl_doc['id']}", headers=manager_headers, json={"role":"viewer","actions":["read"],"user_ids":[],"group_ids":[group_acl_id]}).status_code == 200
     assert client.get(f"/api/v1/documents/{acl_doc['id']}", headers=second_headers).status_code == 200
-    assert client.delete(f"/api/v1/groups/{group_acl_id}/members/{second.json()['user']['id']}", headers=headers).status_code == 200
+    assert client.delete(f"/api/v1/groups/{group_acl_id}/members/{second.json()['user']['id']}", headers=manager_headers).status_code == 200
     assert client.get(f"/api/v1/documents/{acl_doc['id']}", headers=second_headers).status_code == 404
     assert client.get("/api/v1/users", headers=second_headers).status_code == 403
     assert client.get(f"/api/v1/documents/{document_id}", headers=second_headers).status_code == 404
