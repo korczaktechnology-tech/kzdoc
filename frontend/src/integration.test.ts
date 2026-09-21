@@ -4,7 +4,13 @@ import {ApiError,api,clearToken,saveSession,getToken} from './services/api';
 describe('Fase 13 — integração do cliente HTTP',()=>{
   beforeEach(()=>{
     vi.restoreAllMocks();
-    localStorage.clear();
+    const data=new Map<string,string>();
+    Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{
+      getItem:(key:string)=>data.get(key)??null,
+      setItem:(key:string,value:string)=>data.set(key,value),
+      removeItem:(key:string)=>data.delete(key),
+      clear:()=>data.clear()
+    }});
   });
 
   it('envia a sessão e codifica identificadores de recursos',async()=>{
