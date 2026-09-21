@@ -59,6 +59,8 @@ async def update_me(payload: UserUpdateRequest, user=Depends(current_user)):
 @router.post("/users", response_model=UserResponse, status_code=201)
 async def admin_create_user(payload: AdminUserCreateRequest, user=Depends(current_user)):
     require_role(user, "manager")
+    if user["role"] == "manager" and payload.role == "admin":
+        raise AppError("Gestores não podem criar administradores", "forbidden", 403)
     if await repo.find_user_by_email(payload.email):
         raise AppError("E-mail já cadastrado", "email_already_exists", 409)
     created = await repo.create_user({"name": payload.name, "email": payload.email, "phone": payload.phone, "password_hash": hash_password(payload.password), "role": payload.role})
@@ -82,6 +84,8 @@ async def admin_update_user(user_id: str, payload: AdminUserUpdateRequest, user=
     if not target:
         raise NotFoundError("Usuário não encontrado")
     changes = payload.model_dump(exclude_unset=True)
+    if user["role"] == "manager" and (target.get("role") == "admin" or changes.get("role") == "admin" or target.get("role") == "admin" or changes.get("status") == "inactive" and target.get("role") == "admin"):
+        raise AppError("Gestores não podem alterar administradores", "forbidden", 403)
     if not changes:
         return service.clean_user(target)
     updated = await repo.update_user(user_id, changes)
