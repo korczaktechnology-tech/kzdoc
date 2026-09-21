@@ -257,8 +257,15 @@ async def test_api_end_to_end() -> None:
     present = {item["type"] for item in final_items}
     assert required_events.issubset(present)
     assert all(item["integrity_valid"] is True for item in final_items if item.get("integrity_hash"))
-    assert all("password" not in str(item.get("payload", {})).casefold() for item in final_items)
-    assert all("token" not in str(item.get("payload", {})).casefold() for item in final_items)
+    def sensitive_keys(value):
+        if isinstance(value, dict):
+            keys = set(value)
+            found = {k for k in keys if any(term in k.casefold() for term in ("password", "token", "secret", "authorization", "cookie", "api_key", "content"))}
+            return found | {nested for v in value.values() for nested in sensitive_keys(v)}
+        if isinstance(value, list):
+            return {nested for v in value for nested in sensitive_keys(v)}
+        return set()
+    assert all(not sensitive_keys(item.get("payload", {})) for item in final_items)
 
     await database["usuarios"].delete_many({})
     await database["documentos"].delete_many({})
