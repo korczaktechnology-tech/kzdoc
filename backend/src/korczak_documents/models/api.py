@@ -62,6 +62,13 @@ class DocumentCreateRequest(APIModel):
     content: str | None = None
 
 
+class DocumentSaveRequest(APIModel):
+    name: str = Field(min_length=1, max_length=255)
+    document_type: str = Field(min_length=1, max_length=80)
+    content: str | None = Field(default=None, max_length=2000000)
+    base_version_id: str | None = None
+
+
 class DocumentUpdateRequest(APIModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     document_type: str | None = Field(default=None, min_length=1, max_length=80)
