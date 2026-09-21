@@ -20,4 +20,6 @@ async def ensure_indexes(database) -> None:
         await database[collection].create_index(INDEX_DEFINITIONS[collection])
     await database["usuarios"].create_index("email", unique=True, name="user_email_unique")
     await database["etiquetas"].create_index([("owner_id", ASCENDING), ("name", ASCENDING)], unique=True, name="tag_owner_name_unique")
+    await database["documentos"].create_index([("name", "text"), ("description", "text"), ("document_type", "text")], name="document_search_text")
+    await database["versoes"].create_index([("content", "text")], name="version_content_search_text")
     await database["sessoes"].create_index("expires_at", expireAfterSeconds=0, name="session_expiry")
