@@ -124,7 +124,7 @@ async def update_document(document_id: str, payload: DocumentUpdateRequest, user
             raise AppError("A pasta de destino está na lixeira.", "folder_deleted", 409)
     document = await repo.update_document(document_id, changes)
     await repo.log_event(user["id"], "document.updated", {"document_id": document_id, "fields": list(changes)})
-    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []), tag_names=document.get("tag_names", []))
+    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []))
 
 
 @router.delete("/documents/{document_id}")
