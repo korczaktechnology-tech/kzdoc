@@ -24,7 +24,7 @@ Sistema multiplataforma de gestão documental.
 | 6 | Interface Web | 101–114 | 🟢 Concluída |
 | 7 | Telas Principais | 115–135 | 🟢 Concluída |
 | 8 | Editor de Documentos | 136–153 | 🟢 Concluída |
-| 9 | Organização | 154–167 | ⚪ Planejada |
+| 9 | Organização | 154–167 | 🟢 Concluída |
 | 10 | Pesquisa | 168–180 | ⚪ Planejada |
 | 11 | Usuários, Grupos e Permissões | 181–194 | ⚪ Planejada |
 | 12 | Auditoria e Histórico | 195–204 | ⚪ Planejada |
@@ -236,16 +236,18 @@ Sistema multiplataforma de gestão documental.
 **Itens:** 154–167  
 **Objetivo:** completar a organização documental.
 
-- pastas e restauração;
-- movimentação;
-- etiquetas;
+- criação, renomeação, exclusão lógica e restauração de pastas;
+- movimentação de documentos entre pastas;
+- criação, aplicação e remoção de etiquetas;
 - favoritos;
-- recentes;
-- lixeira;
+- registro e consulta de documentos recentes;
+- lixeira de documentos;
 - restauração;
 - exclusão definitiva.
 
-**Estado:** ⚪ Planejada.
+**Documentação:** [Fase 9](docs/FASE_9_ORGANIZACAO.md)
+
+**Estado:** 🟢 Concluída.
 
 ## Fase 10 — Pesquisa
 **Itens:** 168–180  
