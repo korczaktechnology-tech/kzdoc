@@ -130,8 +130,25 @@ async def test_api_end_to_end() -> None:
     assert client.put(
         f"/api/v1/permissions/{document_id}",
         headers=headers,
-        json={"role": "editor", "actions": ["read", "write"]},
+        json={"role": "editor", "actions": ["read", "write"], "user_ids": [], "group_ids": []},
     ).status_code == 200
+
+    created_user = client.post("/api/v1/users", headers=headers, json={"name": "Usuário Fase 11", "email": f"fase11-{uuid4().hex}@example.com", "password": "Korczak-Fase11-2026!", "role": "manager"})
+    assert created_user.status_code == 201
+    managed_user = created_user.json()
+    assert managed_user["role"] == "manager" and managed_user["status"] == "active"
+    group11 = client.post("/api/v1/groups", headers=headers, json={"name": "Grupo Fase 11"}).json()
+    assert client.post(f"/api/v1/groups/{group11['id']}/members/{managed_user['id']}", headers=headers).status_code == 200
+    assert client.put(
+        f"/api/v1/permissions/{document_id}",
+        headers=headers,
+        json={"role": "editor", "actions": ["read", "write"], "user_ids": [], "group_ids": [group11["id"]]},
+    ).status_code == 200
+    manager_headers = {"Authorization": f"Bearer {client.post("/api/v1/auth/login", json={"email": managed_user["email"], "password": "Korczak-Fase11-2026!"}).json()["token"]}"}
+    assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 200
+    assert client.post(f"/api/v1/documents/{document_id}/save", headers=manager_headers, json={"name": "Documento atualizado pelo gestor", "document_type": "txt", "content": "ACL escrita", "base_version_id": client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).json()["current_version_id"]}).status_code == 200
+    assert client.delete(f"/api/v1/groups/{group11['id']}", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 404
 
     assert client.post("/api/v1/auth/recovery", json={"email": email}).status_code == 200
     assert client.post("/api/v1/auth/logout", headers=headers).status_code == 200
