@@ -319,13 +319,37 @@ async def trash(user=Depends(current_user)):
     return [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
 
 
-@router.get("/search", response_model=list[DocumentResponse])
-async def search(q: str = Query("", max_length=255), folder_id: str | None = None, status_filter: str | None = None, date_from: str | None = None, date_to: str | None = None, sort: str = "updated_desc", user=Depends(current_user)):
+@router.get("/search", response_model=SearchResponse)
+async def search(
+    q: str = Query("", max_length=255),
+    folder_id: str | None = None,
+    tag: str | None = None,
+    owner_id: str | None = None,
+    status_filter: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sort: str = "updated_desc",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    user=Depends(current_user),
+):
+    if owner_id and owner_id != user["id"]:
+        raise AppError("Pesquisa restrita aos seus documentos.", "forbidden", 403)
     filters = {"owner_id": user["id"], "status": status_filter or {"$ne": "deleted"}}
-    if q.strip():
-        filters["$or"] = [{"name": {"$regex": q.strip(), "$options": "i"}}, {"document_type": {"$regex": q.strip(), "$options": "i"}}]
+    term = q.strip()
+    if term:
+        doc_matches = await get_database()["documentos"].find(
+            {"owner_id": user["id"], "$text": {"$search": term}}, {"id": 1}
+        ).to_list(length=10000)
+        version_matches = await get_database()["versoes"].find(
+            {"$text": {"$search": term}}, {"document_id": 1}
+        ).to_list(length=10000)
+        ids = {x["id"] for x in doc_matches} | {x["document_id"] for x in version_matches}
+        filters["id"] = {"$in": list(ids)}
     if folder_id:
         filters["folder_id"] = folder_id
+    if tag:
+        filters["tag_names"] = tag
     if date_from or date_to:
         date_filter = {}
         if date_from:
@@ -335,8 +359,12 @@ async def search(q: str = Query("", max_length=255), folder_id: str | None = Non
         filters["updated_at"] = date_filter
     sort_field = "name" if sort.startswith("name_") else "updated_at"
     sort_dir = 1 if sort.endswith("_asc") else -1
-    items = await get_database()["documentos"].find(filters).sort(sort_field, sort_dir).limit(100).to_list(length=100)
-    return [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
+    collection = get_database()["documentos"]
+    total = await collection.count_documents(filters)
+    skip = (page - 1) * page_size
+    items = await collection.find(filters).sort(sort_field, sort_dir).skip(skip).limit(page_size).to_list(length=page_size)
+    documents = [DocumentResponse(**item, favorite=user["id"] in item.get("favorite_user_ids", [])) for item in items]
+    return SearchResponse(items=documents, total=total, page=page, page_size=page_size)
 
 
 @router.post("/documents/{document_id}/open")
