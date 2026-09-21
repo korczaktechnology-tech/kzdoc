@@ -152,7 +152,11 @@ async def test_api_end_to_end() -> None:
     login11 = client.post("/api/v1/auth/login", json={"email": managed_user["email"], "password": "Korczak-Fase11-2026!"})
     assert login11.status_code == 200
     manager_headers = {"Authorization": f"Bearer {login11.json()['token']}"}
+    assert client.get("/api/v1/users", headers=manager_headers).status_code == 200
     assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 200
+    manager_admin_attempt = client.post("/api/v1/users", headers=manager_headers, json={"name":"Não permitido","email":f"nao-admin-{uuid4().hex}@example.com","password":"Korczak-Fase11-2026!","role":"admin"})
+    assert manager_admin_attempt.status_code == 403
+    assert client.put(f"/api/v1/permissions/{document_id}", headers=manager_headers, json={"role":"manager","actions":["read","write"],"user_ids":[],"group_ids":[]}).status_code == 200
     assert client.post(f"/api/v1/documents/{document_id}/save", headers=manager_headers, json={"name": "Documento atualizado pelo gestor", "document_type": "txt", "content": "ACL escrita", "base_version_id": client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).json()["current_version_id"]}).status_code == 200
     assert client.delete(f"/api/v1/groups/{group11['id']}", headers=headers).status_code == 200
     assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 404
@@ -168,7 +172,10 @@ async def test_api_end_to_end() -> None:
     second_email = f"phase4-other-{uuid4().hex}@example.com"
     second = client.post("/api/v1/auth/register", json={"name": "Outro", "email": second_email, "password": password})
     second_headers = {"Authorization": f"Bearer {second.json()['token']}"}
-    denied = client.get(f"/api/v1/documents/{document_id}", headers=second_headers)
+    assert client.get("/api/v1/users", headers=second_headers).status_code == 403
+    assert client.get(f"/api/v1/documents/{document_id}", headers=second_headers).status_code == 404
+    denied = client.get(f"/api/v1/permissions/{document_id}", headers=second_headers)
+    assert denied.status_code == 404
     assert denied.status_code == 404
     second_folder = client.post("/api/v1/folders", headers=second_headers, json={"name": "Pasta privada"}).json()
     cross_owner_move = client.patch(f"/api/v1/documents/{document_id}", headers=second_headers, json={"folder_id": second_folder["id"]})
