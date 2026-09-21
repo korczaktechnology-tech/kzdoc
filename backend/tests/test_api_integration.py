@@ -152,7 +152,7 @@ async def test_api_end_to_end() -> None:
     login11 = client.post("/api/v1/auth/login", json={"email": managed_user["email"], "password": "Korczak-Fase11-2026!"})
     assert login11.status_code == 200
     manager_headers = {"Authorization": f"Bearer {login11.json()['token']}"}
-    assert client.get("/api/v1/users", headers=manager_headers).status_code == 200
+    assert client.get("/api/v1/users", headers=manager_headers).status_code == 403
     assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 200
     manager_admin_attempt = client.post("/api/v1/users", headers=manager_headers, json={"name":"Não permitido","email":f"nao-admin-{uuid4().hex}@example.com","password":"Korczak-Fase11-2026!","role":"admin"})
     assert manager_admin_attempt.status_code == 403
