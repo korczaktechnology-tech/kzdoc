@@ -93,7 +93,7 @@ function App(){
     if(v==='audit')setEvents((await api.audit()).items); if(v==='home')setNotes(await api.notifications());
     if(v==='search'&&query.trim())setDocs(await api.search(query)); if(v==='search'&&!query.trim())setDocs(await api.documents());
   }catch(x){setError(x instanceof Error?x.message:'Falha ao carregar dados.')}}
-  async function openDoc(d:DocumentItem){try{const full=await api.document(d.id);setSelected(full);await api.open(d.id)}catch(x){setError(x instanceof Error?x.message:'Não foi possível abrir o documento.')}setView('viewer')}
+  async function openDoc(d:DocumentItem){try{const full=await api.document(d.id);setSelected(full);setVersions(await api.versions(d.id));await api.open(d.id)}catch(x){setError(x instanceof Error?x.message:'Não foi possível abrir o documento.')}setView('viewer')}
   async function showVersions(v:View){if(!selected)return;setVersions(await api.versions(selected.id));setView(v)}
   async function showHistory(){if(!selected)return;setHistory((await api.audit(selected.id)).items);setView('history')}
   async function saveEditor(data:{name:string;document_type:string;content:string;base_version_id:string|null}){
@@ -109,11 +109,12 @@ function App(){
     }
   }
   async function handleEditorConflict(){
-    if(!selected)return;
+    if(!selected)throw new Error('Documento não selecionado');
     const fresh=await api.document(selected.id);
     setSelected(fresh);
     setVersions(await api.versions(selected.id));
-    setError('Este documento foi alterado em outra sessão. A versão atual foi carregada; revise seu rascunho antes de salvar novamente.');
+    setError('Este documento foi alterado em outra sessão. O rascunho local permanece protegido até você escolher recarregar a versão atual.');
+    return fresh;
   }
   async function createDocument(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);try{const d=await api.createDocument({name:String(f.get('name')),document_type:String(f.get('type')),folder_id:String(f.get('folder')||'')||null,content:String(f.get('content')||'')});setModal(false);setSelected(await api.document(d.id));setView('viewer')}catch(x){setError(x instanceof Error?x.message:'Não foi possível criar.')}}
   async function restoreVersion(v:Version){if(!selected)return;try{await api.restoreVersion(selected.id,v.id);setSelected(await api.document(selected.id));setVersions(await api.versions(selected.id));setView('viewer')}catch(x){setError(x instanceof Error?x.message:'Não foi possível restaurar a versão.')}}
