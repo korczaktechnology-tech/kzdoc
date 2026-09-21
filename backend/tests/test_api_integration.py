@@ -155,6 +155,10 @@ async def test_api_end_to_end() -> None:
     assert tampered["integrity_hash"] == original_hash
     assert repo.event_integrity_valid(tampered) is False
     await database["eventos"].update_one({"id": event["id"]}, {"$set": {"payload.document_id": document_id}})
+    await database["eventos"].update_one({"id": event["id"]}, {"$set": {"actor_id": "tampered-actor"}})
+    tampered_actor = await database["eventos"].find_one({"id": event["id"]})
+    assert repo.event_integrity_valid(tampered_actor) is False
+    await database["eventos"].update_one({"id": event["id"]}, {"$set": {"actor_id": user_id}})
 
     created_user = client.post("/api/v1/users", headers=headers, json={"name": "Usuário Fase 11", "email": f"fase11-{uuid4().hex}@example.com", "password": "Korczak-Fase11-2026!", "role": "manager"})
     assert created_user.status_code == 201
