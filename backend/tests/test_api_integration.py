@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from korczak_documents.database.bootstrap import bootstrap_database
 from korczak_documents.database.connection import get_database
 from korczak_documents.main import app
+from korczak_documents.repositories import api as repo
 
 
 @pytest.mark.integration
@@ -131,7 +132,7 @@ async def test_api_end_to_end() -> None:
         headers=headers,
         json={"role": "editor", "actions": ["read", "write"], "user_ids": [], "group_ids": []},
     ).status_code == 200
-    bad_login = client.post("/api/v1/auth/login", json={"email": user_email, "password": "senha-incorreta"})
+    bad_login = client.post("/api/v1/auth/login", json={"email": email, "password": "senha-incorreta"})
     assert bad_login.status_code == 401
 
     audit_all = client.get("/api/v1/audit", headers=headers, params={"page": 1, "page_size": 100})
