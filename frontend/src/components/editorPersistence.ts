@@ -3,3 +3,5 @@ export const draftKey=(id:string)=>'kzdoc:draft:'+id;
 export function preserveDraft(storage:DraftStorage,id:string,content:string){storage.setItem(draftKey(id),content)}
 export function recoverDraft(storage:DraftStorage,id:string){return storage.getItem(draftKey(id))}
 export function clearDraft(storage:DraftStorage,id:string){storage.removeItem(draftKey(id))}
+
+export async function saveWithDraftFallback<T>(storage:DraftStorage,id:string,content:string,save:()=>Promise<T>):Promise<T>{try{const result=await save();clearDraft(storage,id);return result}catch(error){preserveDraft(storage,id,content);throw error}}
