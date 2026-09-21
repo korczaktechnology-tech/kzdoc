@@ -143,7 +143,7 @@ async def log_event(user_id: str | None, event_type: str, payload: dict):
     resource = str(safe_payload.get("resource") or ("document" if "document_id" in safe_payload else "folder" if "folder_id" in safe_payload else "user" if "target_user_id" in safe_payload else "group" if "group_id" in safe_payload else "system"))
     resource_id = safe_payload.get("resource_id") or safe_payload.get("document_id") or safe_payload.get("folder_id") or safe_payload.get("target_user_id") or safe_payload.get("group_id")
     result = str(safe_payload.get("result") or "success")
-    canonical = json.dumps({"id": event_id, "user_id": user_id, "type": event_type, "payload": safe_payload, "created_at": created.isoformat(), "resource": resource, "resource_id": resource_id, "result": result}, sort_keys=True, default=str, separators=(",", ":"))
+    canonical = json.dumps({"id": event_id, "user_id": user_id, "type": event_type, "payload": safe_payload, "created_at": created.replace(tzinfo=None).isoformat(), "resource": resource, "resource_id": resource_id, "result": result}, sort_keys=True, default=str, separators=(",", ":"))
     integrity_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     await get_database()["eventos"].insert_one({
         "id": event_id, "user_id": user_id, "actor_id": user_id, "type": event_type,
@@ -165,7 +165,7 @@ def event_integrity_valid(event: dict) -> bool:
         return False
     canonical = json.dumps({
         "id": event.get("id"), "user_id": event.get("user_id"), "type": event.get("type"),
-        "payload": event.get("payload", {}), "created_at": event.get("created_at"),
+        "payload": event.get("payload", {}), "created_at": (event.get("created_at").replace(tzinfo=None).isoformat() if hasattr(event.get("created_at"), "replace") else str(event.get("created_at"))),
         "resource": event.get("resource"), "resource_id": event.get("resource_id"),
         "result": event.get("result", "success")
     }, sort_keys=True, default=str, separators=(",", ":"))
