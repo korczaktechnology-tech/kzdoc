@@ -108,7 +108,7 @@ async def list_versions(document_id: str):
 
 
 async def create_folder(owner_id: str, data: dict):
-    folder = {"id": str(uuid4()), "owner_id": owner_id, "parent_id": data.get("parent_id"), "name": data["name"].strip(), "created_at": now(), "updated_at": now()}
+    folder = {"id": str(uuid4()), "owner_id": owner_id, "parent_id": data.get("parent_id"), "name": data["name"].strip(), "status": "active", "created_at": now(), "updated_at": now()}
     await get_database()["pastas"].insert_one(folder)
     return folder
 
