@@ -24,7 +24,7 @@ async def test_phase12_audit_contract():
 
     client = TestClient(app)
     email = f"audit-{uuid4().hex}@example.com"
-    password = "Korczak-Auditoria-2026!"
+    password = "Korczak-Seguro-2026!"
     register = client.post("/api/v1/auth/register", json={"name": "Auditoria", "email": email, "password": password})
     assert register.status_code == 201
     headers = {"Authorization": f"Bearer {register.json()['token']}"}
