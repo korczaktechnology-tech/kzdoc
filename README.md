@@ -26,7 +26,7 @@ Sistema multiplataforma de gestão documental.
 | 8 | Editor de Documentos | 136–153 | 🟢 Concluída |
 | 9 | Organização | 154–167 | 🟢 Concluída |
 | 10 | Pesquisa | 168–180 | 🟢 Concluída |
-| 11 | Usuários, Grupos e Permissões | 181–194 | ⚪ Planejada |
+| 11 | Usuários, Grupos e Permissões | 181–194 | 🟢 Concluída |
 | 12 | Auditoria e Histórico | 195–204 | ⚪ Planejada |
 | 13 | Integração Frontend ↔ Backend | 205–222 | ⚪ Planejada |
 | 14 | Responsividade e Acessibilidade | 223–238 | ⚪ Planejada |
@@ -285,6 +285,10 @@ Sistema multiplataforma de gestão documental.
 - tentativa direta pela API.
 
 **Estado:** ⚪ Planejada.
+
+**Documentação:** [Fase 11](docs/FASE_11_USUARIOS_GRUPOS_PERMISSOES.md)
+
+**Estado:** 🟢 Concluída.
 
 ## Fase 12 — Auditoria e Histórico
 **Itens:** 195–204  
