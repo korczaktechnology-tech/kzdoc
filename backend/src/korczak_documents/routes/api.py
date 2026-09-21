@@ -373,7 +373,8 @@ async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=
 
 @router.get("/notifications", response_model=list[NotificationResponse])
 async def notifications(user=Depends(current_user)):
-    items = await get_database()["notificacoes"].find({"user_id": user["id"]}).sort("created_at", -1).limit(100).to_list(length=100)\n    return [without_mongo_id(item) for item in items]
+    items = await get_database()["notificacoes"].find({"user_id": user["id"]}).sort("created_at", -1).limit(100).to_list(length=100)
+    return [without_mongo_id(item) for item in items]
 
 
 @router.post("/notifications/{notification_id}/read")
