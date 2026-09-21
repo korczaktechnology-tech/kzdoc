@@ -30,7 +30,7 @@ Cada novo evento contém:
 - `created_at`;
 - `integrity_hash`.
 
-O hash SHA-256 é calculado sobre uma representação canônica dos campos imutáveis do evento. A consulta de auditoria recalcula o hash e retorna `integrity_valid`, permitindo detectar alteração indevida de registros.
+O hash SHA-256 é calculado sobre uma representação canônica dos campos do evento que devem permanecer íntegros, incluindo identidade do ator, ação, recurso, resultado, payload e data. A consulta de auditoria recalcula o hash e retorna `integrity_valid`, permitindo detectar alteração indevida de registros. A redaction é recursiva para impedir que dados sensíveis sejam gravados dentro de objetos ou listas aninhados.
 
 ## Eventos cobertos
 
@@ -70,7 +70,7 @@ A integração testa:
 - filtros;
 - isolamento por ator;
 - presença do hash;
-- detecção de adulteração do payload;
+- detecção de adulteração do payload e do ator;
 - regressão do backend;
 - build e testes do frontend.
 
