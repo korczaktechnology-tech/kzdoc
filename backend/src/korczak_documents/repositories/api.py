@@ -160,6 +160,18 @@ async def list_events(user_id: str, filters: dict, skip: int, limit: int):
     return items, total
 
 
+def event_integrity_valid(event: dict) -> bool:
+    if not event.get("integrity_hash"):
+        return False
+    canonical = json.dumps({
+        "id": event.get("id"), "user_id": event.get("user_id"), "type": event.get("type"),
+        "payload": event.get("payload", {}), "created_at": event.get("created_at"),
+        "resource": event.get("resource"), "resource_id": event.get("resource_id"),
+        "result": event.get("result", "success")
+    }, sort_keys=True, default=str, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest() == event["integrity_hash"]
+
+
 async def list_audit_events(actor_id: str, filters: dict, skip: int, limit: int, global_view: bool = False):
     collection = get_database()["eventos"]
     query = {} if global_view else {"user_id": actor_id}
