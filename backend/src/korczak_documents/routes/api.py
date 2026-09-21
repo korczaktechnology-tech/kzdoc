@@ -178,6 +178,17 @@ async def restore_version(document_id: str, version_id: str, user=Depends(curren
 async def folders(user=Depends(current_user)):
     return await repo.list_folders(user["id"])
 
+@router.get("/folders/trash", response_model=list[FolderResponse])
+async def deleted_folders(user=Depends(current_user)):
+    return await repo.list_deleted_folders(user["id"])
+
+@router.post("/folders/{folder_id}/restore")
+async def restore_folder(folder_id: str, user=Depends(current_user)):
+    folder = await service.folder_or_404(folder_id, user["id"])
+    await repo.update_folder(folder_id, {"status": "active"})
+    await repo.log_event(user["id"], "folder.restored", {"folder_id": folder_id})
+    return {"message": "Pasta restaurada"}
+
 
 @router.post("/folders", response_model=FolderResponse, status_code=201)
 async def create_folder(payload: FolderCreateRequest, user=Depends(current_user)):
