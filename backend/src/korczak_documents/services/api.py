@@ -53,18 +53,36 @@ async def request_recovery(email: str):
     return {"message": "Se a conta existir, as instruções de recuperação serão encaminhadas."}
 
 
-async def document_or_404(document_id: str, user_id: str):
+async def _group_ids_for_user(user_id: str) -> set[str]:
+    groups = await get_database()["grupos"].find({"member_ids": user_id}, {"id": 1}).to_list(length=1000)
+    return {g["id"] for g in groups}
+
+async def _allowed_by_acl(resource: dict, user_id: str, action: str) -> bool:
+    if resource.get("owner_id") == user_id:
+        return True
+    acl = resource.get("permissions") or {}
+    if action not in acl.get("actions", []):
+        return False
+    if user_id in acl.get("user_ids", []):
+        return True
+    group_ids = await _group_ids_for_user(user_id)
+    return bool(group_ids.intersection(set(acl.get("group_ids", []))))
+
+async def document_or_404(document_id: str, user_id: str, action: str = "read"):
     document = await repo.get_document(document_id)
-    if not document or document["owner_id"] != user_id:
+    if not document or document.get("status") == "deleted" or not await _allowed_by_acl(document, user_id, action):
         raise NotFoundError("Documento não encontrado")
     return document
 
-
-async def folder_or_404(folder_id: str, user_id: str):
+async def folder_or_404(folder_id: str, user_id: str, action: str = "read"):
     folder = await repo.get_folder(folder_id)
-    if not folder or folder["owner_id"] != user_id:
+    if not folder or folder.get("status") == "deleted" or not await _allowed_by_acl(folder, user_id, action):
         raise NotFoundError("Pasta não encontrada")
     return folder
+
+async def permission_policy(resource: dict, user_id: str) -> dict:
+    acl = resource.get("permissions") or {}
+    return {"role": acl.get("role", "private"), "actions": acl.get("actions", []), "user_ids": acl.get("user_ids", []), "group_ids": acl.get("group_ids", [])}
 
 
 async def tag_or_404(tag_name: str, user_id: str):
