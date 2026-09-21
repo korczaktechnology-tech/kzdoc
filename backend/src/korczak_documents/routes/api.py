@@ -160,7 +160,7 @@ async def restore_version(document_id: str, version_id: str, user=Depends(curren
     new_version = await repo.create_version(document_id, user["id"], version.get("content"), await service.version_number(document_id))
     await repo.update_document(document_id, {"current_version_id": new_version["id"]})
     await repo.log_event(user["id"], "document.version_restored", {"document_id": document_id, "source_version_id": version_id, "new_version_id": new_version["id"]})
-    return new_version
+    return without_mongo_id(new_version)
 
 
 @router.get("/folders", response_model=list[FolderResponse])
