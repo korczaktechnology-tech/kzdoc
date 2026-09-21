@@ -80,6 +80,24 @@ async def create_version(document_id: str, author_id: str, content: str | None, 
     await update_document(document_id, {"current_version_id": version["id"]})
     return version
 
+async def save_document(document_id: str, author_id: str, data: dict, base_version_id: str | None):
+    database=get_database(); documents=database["documentos"]; versions=database["versoes"]
+    current=await documents.find_one({"id":document_id})
+    if not current or current.get("current_version_id") != base_version_id:
+        return None
+    version_number=await _next_version_number(document_id)
+    version={"id":str(uuid4()),"document_id":document_id,"version_number":version_number,"author_id":author_id,"content":data.get("content"),"created_at":now()}
+    await versions.insert_one(version)
+    result=await documents.update_one({"id":document_id,"current_version_id":base_version_id},{"$set":{"name":data["name"].strip(),"document_type":data["document_type"].strip(),"current_version_id":version["id"],"updated_at":now()}})
+    if result.modified_count != 1:
+        await versions.delete_one({"id":version["id"]})
+        return None
+    return await documents.find_one({"id":document_id}),version
+
+async def _next_version_number(document_id: str) -> int:
+    last=await get_database()["versoes"].find_one({"document_id":document_id},sort=[("version_number",-1)])
+    return int(last["version_number"])+1 if last else 1
+
 
 async def get_version(version_id: str):
     return await get_database()["versoes"].find_one({"id": version_id})
