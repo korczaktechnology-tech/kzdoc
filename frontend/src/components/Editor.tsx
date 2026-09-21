@@ -7,7 +7,13 @@ const escapeHtml=(value:string)=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;'
 export function markdownToHtml(source:string){
   const safe=escapeHtml(source||'').replace(/\r\n/g,'\n'); const lines=safe.split('\n'); let html=''; let inUl=false; let inOl=false;
   const close=()=>{if(inUl){html+='</ul>';inUl=false}if(inOl){html+='</ol>';inOl=false}};
-  for(const line of lines){
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(/^\s*\|.+\|$/.test(line)&&/^\s*\|?\s*:?-{3,}:?\s*\|/.test(lines[i+1]||'')){
+      close(); const header=parseTableRow(line); i++; const separator=lines[i]; void separator; const rows:string[][]=[];
+      while(i+1<lines.length&&/^\s*\|.+\|$/.test(lines[i+1])&&!/^\s*\|?\s*:?-{3,}:?\s*\|/.test(lines[i+1])){i++;rows.push(parseTableRow(lines[i]))}
+      html+='<table><thead><tr>'+header.map(cell=>'<th>'+inline(cell)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(cell=>'<td>'+inline(cell)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';continue;
+    }
     if(/^\s*[-*]\s+/.test(line)){if(!inUl){close();html+='<ul>';inUl=true}html+='<li>'+inline(line.replace(/^\s*[-*]\s+/,''))+'</li>';continue}
     if(/^\s*\d+[.)]\s+/.test(line)){if(!inOl){close();html+='<ol>';inOl=true}html+='<li>'+inline(line.replace(/^\s*\d+[.)]\s+/,''))+'</li>';continue}
     close(); if(!line.trim()){html+='<p><br></p>';continue}
@@ -15,11 +21,16 @@ export function markdownToHtml(source:string){
     if(/^##\s+/.test(line)){html+='<h2>'+inline(line.replace(/^##\s+/,''))+'</h2>';continue}
     if(/^#\s+/.test(line)){html+='<h1>'+inline(line.replace(/^#\s+/,''))+'</h1>';continue}
     if(/^>\s+/.test(line)){html+='<blockquote>'+inline(line.replace(/^>\s+/,''))+'</blockquote>';continue}
-    if(/^\|.+\|$/.test(line)){html+='<pre class="md-table">'+line+'</pre>';continue}
     html+='<p>'+inline(line)+'</p>';
   } close(); return html||'<p><br></p>';
 }
-function inline(value:string){return value.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noreferrer">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/_([^_]+)_/g,'<em>$1</em>').replace(/~~([^~]+)~~/g,'<s>$1</s>');}
+function parseTableRow(line:string){return line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(cell=>cell.trim())}
+function inline(value:string){
+  const codes:string[]=[];
+  let text=value.replace(/\`([^\`]+)\`/g,(_,code)=>{const key=String.fromCharCode(0)+codes.length+String.fromCharCode(0);codes.push('<code>'+code+'</code>');return key});
+  text=text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noreferrer">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/_([^_]+)_/g,'<em>$1</em>').replace(/~~([^~]+)~~/g,'<s>$1</s>');
+  codes.forEach((code,index)=>{text=text.replace(String.fromCharCode(0)+index+String.fromCharCode(0),code)}); return text;
+}
 function toolbarInsert(value:string,start:number,end:number,text:string){const before=text.slice(0,start),selected=text.slice(start,end),after=text.slice(end);const marker=value.indexOf('$');const next=value.replace('$',selected);return{text:before+next+after,start:start+marker,end:start+marker+(selected||'').length};}
 function applyWrap(text:string,start:number,end:number,left:string,right=left){const selected=text.slice(start,end)||'texto';const next=text.slice(0,start)+left+selected+right+text.slice(end);return{text:next,start:start+left.length,end:start+left.length+selected.length};}
 
@@ -28,6 +39,7 @@ export function Editor({document,versions,onSave,onClose,onConflict}:{document:D
   const history=useRef<string[]>([initial]),future=useRef<string[]>([]),timer=useRef<number|undefined>(undefined);const textarea=useRef<HTMLTextAreaElement>(null);
   const draft=useMemo(()=>{try{return recoverDraft(localStorage,document.id)}catch{return null}},[document.id]);
   useEffect(()=>{if(draft!==null&&draft!==initial){setContent(draft);setState('dirty');setMessage('Rascunho local recuperado')}},[draft,initial]);
+  useEffect(()=>{setName(document.name);setType(document.document_type);setContent(document.content||'');history.current=[document.content||''];future.current=[];setState('saved');setMessage('Salvo')},[document.id]);
   useEffect(()=>{const saveDraft=()=>{if(state!=='saved'){try{preserveDraft(localStorage,document.id,content)}catch{}}};window.addEventListener('visibilitychange',saveDraft);return()=>window.removeEventListener('visibilitychange',saveDraft)},[content,state,document.id]);
   useEffect(()=>{const before=(e:BeforeUnloadEvent)=>{if(state==='dirty'||state==='saving'||state==='conflict'){e.preventDefault();e.returnValue=true}};window.addEventListener('beforeunload',before);return()=>window.removeEventListener('beforeunload',before)},[state]);
   useEffect(()=>()=>{if(timer.current)window.clearTimeout(timer.current)},[]);
