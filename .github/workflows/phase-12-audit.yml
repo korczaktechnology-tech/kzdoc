@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[test]"
-      - run: pytest -q tests/test_api_contract.py tests/test_api_integration.py
+      - run: pytest -q tests/test_api_contract.py tests/test_api_integration.py tests/test_audit.py
         env:
           MONGODB_URI: mongodb://127.0.0.1:27017
           MONGODB_DB: KZDocs

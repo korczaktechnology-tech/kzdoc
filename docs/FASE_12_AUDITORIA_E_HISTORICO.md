@@ -1,79 +1,68 @@
 # Fase 12 — Auditoria e Histórico
 
-## Checklist oficial
+## Objetivo
 
-195. Registrar criação.  
-196. Registrar edição.  
-197. Registrar exclusão.  
-198. Registrar restauração.  
-199. Registrar alterações de permissão.  
-200. Registrar alterações administrativas.  
-201. Registrar autenticações relevantes.  
-202. Criar consulta de eventos.  
-203. Criar filtros de auditoria.  
-204. Garantir integridade dos registros.
+Fechar a rastreabilidade do Korczak Documents. Toda operação relevante deve registrar quem executou a ação, o que ocorreu, qual recurso foi afetado, quando ocorreu, o resultado e se o registro permanece íntegro, sem transformar a auditoria em cópia dos dados privados.
 
-## Implementação
+## Checklist oficial — itens 195–204
 
-A coleção `eventos` funciona como registro append-only no nível da aplicação. As operações destrutivas e administrativas não possuem rota de alteração ou exclusão de eventos.
+**195. Registrar criação.** Documentos, pastas, etiquetas, grupos e usuários geram eventos quando a criação é concluída.
 
-Cada novo evento contém:
-- `id`;
-- `user_id`;
-- `actor_id`;
-- `type`;
-- `action`;
-- `resource`;
-- `resource_id`;
-- `result`;
-- `payload` redigido;
-- `created_at`;
-- `integrity_hash`.
+**196. Registrar edição.** Alterações de documentos, pastas, versões e usuários geram eventos com os campos alterados quando aplicável, sem registrar valores sensíveis.
 
-O hash SHA-256 é calculado sobre uma representação canônica dos campos do evento que devem permanecer íntegros, incluindo identidade do ator, ação, recurso, resultado, payload e data. A consulta de auditoria recalcula o hash e retorna `integrity_valid`, permitindo detectar alteração indevida de registros. A redaction é recursiva para impedir que dados sensíveis sejam gravados dentro de objetos ou listas aninhados.
+**197. Registrar exclusão.** Exclusões lógicas, definitivas e remoções são registradas.
+
+**198. Registrar restauração.** Documentos, pastas e versões restaurados geram eventos próprios.
+
+**199. Registrar alterações de permissão.** Alterações de permissões de documentos e pastas registram ator, recurso, política e resultado.
+
+**200. Registrar alterações administrativas.** Operações administrativas sobre usuários e grupos são rastreáveis.
+
+**201. Registrar autenticações relevantes.** Cadastro, login, falha de login, logout e recuperação são registrados quando houver informação suficiente para associação segura.
+
+**202. Criar consulta de eventos.** `GET /api/v1/audit` oferece consulta paginada.
+
+**203. Criar filtros de auditoria.** A consulta aceita tipo, documento, ator, recurso, resultado e período, inclusive combinados.
+
+**204. Garantir integridade dos registros.** Cada evento possui SHA-256 calculado sobre uma representação canônica dos campos essenciais; a consulta recalcula o hash e retorna `integrity_valid`.
+
+## Modelo do evento
+
+A coleção `eventos` é append-only no nível da aplicação. Não existe endpoint para editar ou excluir eventos.
+
+Cada registro contém `id`, `user_id`, `actor_id`, `type`, `action`, `resource`, `resource_id`, `result`, `payload` redigido, `created_at` em UTC e `integrity_hash`.
+
+O hash cobre esses campos lógicos. Alteração posterior de ator, ação, recurso, resultado, payload ou data invalida o registro.
+
+## Privacidade e redaction
+
+O payload passa por redaction recursiva. Chaves contendo `password`, `token`, `secret`, `authorization`, `cookie`, `api_key` ou `content` são substituídas por `[REDACTED]`, inclusive em objetos e listas aninhados.
+
+A auditoria guarda identificadores e metadados necessários para rastreabilidade, mas não senhas, tokens, cookies, chaves de API, autorizações ou o conteúdo integral dos documentos.
 
 ## Eventos cobertos
 
-- criação de documentos e pastas;
-- edição e salvamento;
-- exclusão e restauração;
-- criação/restauração de versões;
-- alterações de permissões de documentos e pastas;
-- criação, alteração e operações administrativas de usuários;
-- criação, associação e remoção de membros de grupos;
-- login, logout, recuperação e falhas de autenticação;
-- operações de etiquetas e favoritos.
+- documentos: criação, edição, salvamento, exclusão, exclusão definitiva, restauração, versões e abertura;
+- pastas: criação, edição, exclusão e restauração;
+- permissões de documentos e pastas;
+- usuários e grupos, incluindo membros;
+- cadastro, login, falha de login, logout e recuperação;
+- etiquetas e favoritos.
 
-## Consulta
+## Consulta e autorização
 
-`GET /api/v1/audit` permite paginação e filtros por:
-- tipo do evento;
-- documento;
-- ator;
-- recurso;
-- resultado;
-- período.
+Administradores e gestores podem consultar a visão global. Usuários comuns ficam restritos aos próprios eventos. A API rejeita consulta de outro ator por usuário comum.
 
-Administradores e gestores podem consultar a visão global. Usuários comuns consultam somente seus próprios eventos. O servidor não aceita que um usuário comum consulte o histórico de outro ator.
-
-## Privacidade
-
-O payload passa por uma camada de redaction antes do armazenamento. Campos como senha, token, segredo, autorização, cookie, chave de API e conteúdo integral do documento não são gravados na auditoria.
+A paginação aceita no máximo 100 registros por página e ordena os eventos do mais recente para o mais antigo. A coleção possui índices para usuário+data, ator+data e recurso+data.
 
 ## Validação
 
-A integração testa:
-- eventos de criação;
-- alteração de permissões;
-- autenticação falha;
-- consulta paginada;
-- filtros;
-- isolamento por ator;
-- presença do hash;
-- detecção de adulteração do payload e do ator;
-- regressão do backend;
-- build e testes do frontend.
+A fase valida criação, edição, exclusão, restauração, versões, permissões, operações administrativas, autenticação, paginação, filtros combinados, isolamento entre atores, acesso global autorizado, redaction, presença do hash e detecção de adulteração.
+
+O workflow da Fase 12 também executa a regressão do backend e o build/teste do frontend.
 
 ## Critério de conclusão
 
-Os itens 195–204 somente são considerados concluídos quando a implementação e o workflow específico da Fase 12 passam, juntamente com as regressões das fases anteriores.
+Os itens **195–204** são considerados concluídos somente quando implementação, testes de integração e workflow específico da Fase 12 passam sem regressões.
+
+**Estado: 🟢 Concluída**
