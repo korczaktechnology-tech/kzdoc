@@ -32,6 +32,8 @@ jobs:
 
       - name: Build
         working-directory: frontend
+        env:
+          VITE_API_BASE_URL: https://kzdoc.onrender.com
         run: npm run build
 
       - name: Setup Pages
