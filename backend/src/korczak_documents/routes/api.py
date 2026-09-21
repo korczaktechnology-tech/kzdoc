@@ -519,7 +519,12 @@ async def audit(
         if date_to: date_filter["$lt"] = datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc) + timedelta(days=1)
         filters["created_at"] = date_filter
     items, total = await repo.list_audit_events(user["id"], filters, skip, limit, global_view=global_view)
-    return {"items": [without_mongo_id(item) for item in items], "total": total, "page": page, "page_size": page_size}
+    cleaned = []
+    for item in items:
+        event = without_mongo_id(item)
+        event["integrity_valid"] = repo.event_integrity_valid(item)
+        cleaned.append(event)
+    return {"items": cleaned, "total": total, "page": page, "page_size": page_size}
 
 
 @router.get("/notifications", response_model=list[NotificationResponse])
