@@ -124,6 +124,7 @@ async def test_api_end_to_end() -> None:
 
     client.delete(f"/api/v1/documents/{document_id}", headers=second_headers)
     own = client.post("/api/v1/documents", headers=second_headers, json={"name": "Lixeira", "document_type": "txt"}).json()
+    assert client.delete(f"/api/v1/documents/{own['id']}/permanent", headers=second_headers).status_code == 409
     assert client.delete(f"/api/v1/documents/{own['id']}", headers=second_headers).status_code == 200
     assert client.get("/api/v1/trash", headers=second_headers).status_code == 200
     assert client.post(f"/api/v1/documents/{own['id']}/restore", headers=second_headers).status_code == 200
