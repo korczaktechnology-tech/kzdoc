@@ -28,7 +28,7 @@ Sistema multiplataforma de gestão documental.
 | 10 | Pesquisa | 168–180 | 🟢 Concluída |
 | 11 | Usuários, Grupos e Permissões | 181–194 | 🟢 Concluída |
 | 12 | Auditoria e Histórico | 195–204 | 🟢 Concluída |
-| 13 | Integração Frontend ↔ Backend | 205–222 | ⚪ Planejada |
+| 13 | Integração Frontend ↔ Backend | 205–222 | 🟢 Concluída |
 | 14 | Responsividade e Acessibilidade | 223–238 | ⚪ Planejada |
 | 15 | Versão Web / GitHub Pages | 239–252 | ⚪ Planejada |
 | 16 | Aplicação Desktop | 253–274 | ⚪ Planejada |
