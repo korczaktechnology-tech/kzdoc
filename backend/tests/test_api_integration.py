@@ -91,6 +91,11 @@ async def test_api_end_to_end() -> None:
 
     assert client.get(f"/api/v1/permissions/{document_id}", headers=headers).status_code == 200
 
+    assert client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"description": "manual de pesquisa combinado"}).status_code == 200
+    assert client.post("/api/v1/tags", headers=headers, json={"name": "busca"}).status_code == 201
+    assert client.post(f"/api/v1/documents/{document_id}/tags/busca", headers=headers, json={}).status_code == 200
+    assert client.get("/api/v1/search", headers=headers, params={"q": "manual", "folder_id": folder["id"], "tag": "busca"}).json()["total"] >= 1
+    assert client.get("/api/v1/search", headers=headers, params={"q": "Documento", "sort": "name_asc"}).status_code == 200
     search_result = client.get("/api/v1/search", headers=headers, params={"q": "conteúdo pequeno salvo", "sort": "name_asc", "page": 1, "page_size": 10})
     assert search_result.status_code == 200
     assert search_result.json()["page_size"] == 10
