@@ -19,9 +19,12 @@ describe('Fase 8 - editor',()=>{
     const source='texto '.repeat(100000);
     expect(markdownToHtml(source).length).toBeGreaterThan(500000);
   });
-  it('suporta tabela simples e links',()=>{
-    const html=markdownToHtml('| A | B |\n| --- | --- |\n| 1 | 2 |\n[link](https://example.com)');
-    expect(html).toContain('md-table');
+  it('suporta tabela, código e links',()=>{
+    const html=markdownToHtml('| A | B |\n| --- | --- |\n| 1 | 2 |\n`codigo`\n[link](https://example.com)');
+    expect(html).toContain('<table>');
+    expect(html).toContain('<th>A</th>');
+    expect(html).toContain('<td>1</td>');
+    expect(html).toContain('<code>codigo</code>');
     expect(html).toContain('https://example.com');
   });
 });
