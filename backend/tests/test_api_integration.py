@@ -91,7 +91,16 @@ async def test_api_end_to_end() -> None:
 
     assert client.get(f"/api/v1/permissions/{document_id}", headers=headers).status_code == 200
 
-    assert client.get("/api/v1/search", headers=headers, params={"q": "Documento", "sort": "name_asc"}).status_code == 200
+    search_result = client.get("/api/v1/search", headers=headers, params={"q": "conteúdo pequeno salvo", "sort": "name_asc", "page": 1, "page_size": 10})
+    assert search_result.status_code == 200
+    assert search_result.json()["page_size"] == 10
+    assert any(x["id"] == document_id for x in search_result.json()["items"])
+    assert client.get("/api/v1/search", headers=headers, params={"folder_id": folder["id"]}).status_code == 200
+    assert client.get("/api/v1/search", headers=headers, params={"tag": "inexistente"}).json()["total"] == 0
+    assert client.get("/api/v1/search", headers=headers, params={"owner_id": user_id}).status_code == 200
+    assert client.get("/api/v1/search", headers=headers, params={"owner_id": "outro"}).status_code == 403
+    assert client.get("/api/v1/search", headers=headers, params={"status_filter": "active", "date_from": "2026-01-01", "date_to": "2026-12-31"}).status_code == 200
+    assert client.get("/api/v1/search", headers=headers, params={"sort": "name_asc", "page": 2, "page_size": 1}).status_code == 200
     assert client.get("/api/v1/search", headers=headers, params={"status_filter": "active", "date_from": "2026-01-01", "date_to": "2026-12-31"}).status_code == 200
     assert client.get("/api/v1/audit", headers=headers).status_code == 200
     assert client.get("/api/v1/notifications", headers=headers).status_code == 200
