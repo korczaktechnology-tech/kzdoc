@@ -25,7 +25,7 @@ Sistema multiplataforma de gestão documental.
 | 7 | Telas Principais | 115–135 | 🟢 Concluída |
 | 8 | Editor de Documentos | 136–153 | 🟢 Concluída |
 | 9 | Organização | 154–167 | 🟢 Concluída |
-| 10 | Pesquisa | 168–180 | ⚪ Planejada |
+| 10 | Pesquisa | 168–180 | 🟢 Concluída |
 | 11 | Usuários, Grupos e Permissões | 181–194 | ⚪ Planejada |
 | 12 | Auditoria e Histórico | 195–204 | ⚪ Planejada |
 | 13 | Integração Frontend ↔ Backend | 205–222 | ⚪ Planejada |
@@ -267,7 +267,9 @@ Sistema multiplataforma de gestão documental.
 - nenhuma ocorrência;
 - grandes volumes.
 
-**Estado:** ⚪ Planejada.
+**Documentação:** [Fase 10](docs/FASE_10_PESQUISA.md)
+
+**Estado:** 🟢 Concluída.
 
 ## Fase 11 — Usuários, Grupos e Permissões
 **Itens:** 181–194  
