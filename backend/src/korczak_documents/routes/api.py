@@ -5,7 +5,7 @@ from ..dependencies import current_user
 from ..errors import AppError, NotFoundError, ValidationError
 from ..models.api import *
 from ..repositories import api as repo
-from ..security import create_session, token_hash
+from ..security import create_session, token_hash, hash_password
 from ..services import api as service
 from ..database.connection import get_database
 
@@ -54,6 +54,17 @@ async def update_me(payload: UserUpdateRequest, user=Depends(current_user)):
     updated = await repo.update_user(user["id"], changes)
     await repo.log_event(user["id"], "user.updated", {"fields": list(changes)})
     return service.clean_user(updated)
+
+
+@router.post("/users", response_model=UserResponse, status_code=201)
+async def admin_create_user(payload: AdminUserCreateRequest, user=Depends(current_user)):
+    if user["role"] != "admin":
+        raise AppError("Acesso administrativo necessário", "forbidden", 403)
+    if await repo.find_user_by_email(payload.email):
+        raise AppError("E-mail já cadastrado", "email_already_exists", 409)
+    created = await repo.create_user({"name": payload.name, "email": payload.email, "phone": payload.phone, "password_hash": hash_password(payload.password), "role": payload.role})
+    await repo.log_event(user["id"], "admin.user_created", {"target_user_id": created["id"]})
+    return service.clean_user(created)
 
 
 @router.get("/users", response_model=list[UserResponse])
