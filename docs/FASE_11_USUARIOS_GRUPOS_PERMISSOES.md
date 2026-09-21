@@ -1,11 +1,9 @@
 # Fase 11 — Usuários, Grupos e Permissões
 
-A Fase 11 implementa identidade administrativa, agrupamento e autorização no backend e na interface.
-
 ## Checklist 181–194
-- [x] 181 Criar usuários — cadastro público e criação administrativa.
-- [x] 182 Editar usuários — perfil e administração.
-- [x] 183 Desativar usuários — estado inativo impede autenticação.
+- [x] 181 Criar usuários.
+- [x] 182 Editar usuários.
+- [x] 183 Desativar usuários.
 - [x] 184 Criar grupos.
 - [x] 185 Adicionar usuários aos grupos.
 - [x] 186 Definir permissões.
@@ -14,21 +12,23 @@ A Fase 11 implementa identidade administrativa, agrupamento e autorização no b
 - [x] 189 Perfil administrador.
 - [x] 190 Perfil gestor.
 - [x] 191 Perfil usuário.
-- [x] 192 Acesso permitido.
-- [x] 193 Acesso negado.
-- [x] 194 Tentativa de acesso direto pela API.
+- [x] 192 Testar acesso permitido.
+- [x] 193 Testar acesso negado.
+- [x] 194 Testar acesso direto pela API.
 
-## Modelo de autorização
-A autorização é verificada no servidor. Proprietários têm controle sobre seus recursos; administradores possuem acesso administrativo; demais acessos dependem da ACL do documento ou da pasta.
+## Regras de autorização
+O proprietário mantém controle sobre seus recursos. Administradores possuem acesso administrativo. Gestores podem administrar usuários e grupos e políticas de acesso, sem poder criar ou promover outro administrador. Usuários comuns operam seus próprios recursos e recursos explicitamente compartilhados por ACL.
 
-Cada ACL registra papel da política, ações read/write/delete/share, usuários autorizados e grupos autorizados.
+Permissões são avaliadas no servidor; esconder um botão no frontend não é uma medida de segurança.
 
-Permissões de uma pasta podem conceder acesso aos documentos pertencentes àquela área. A API continua sendo a autoridade final.
+### Ações ACL
+read, write, delete, share.
 
-## Perfis
-- Administrador: administração de usuários, grupos e políticas.
-- Gestor: perfil disponível para usuários administrativos/operacionais e sujeito às ACLs dos recursos.
-- Usuário: acesso normal conforme propriedade e ACLs concedidas.
+### Áreas
+Pastas possuem ACL própria. Quando um documento não concede acesso diretamente, a política da pasta pode conceder acesso ao documento contido nela.
+
+### Desativação
+Usuários inativos não conseguem iniciar novas sessões e sessões existentes são rejeitadas pela autenticação.
 
 ## Validação
-O workflow da fase executa testes de contrato, integração com MongoDB e build/testes do frontend. Os cenários incluem criação e desativação de usuários, grupos, associação, permissões por grupo, acesso permitido, revogação e tentativa de acesso direto à API.
+O workflow da Fase 11 executa testes de integração com MongoDB e build/testes do frontend. A suíte verifica criação, edição, desativação, grupos, membros, ACL direta, ACL por grupo, ACL de pasta, perfis, acesso permitido, acesso negado e tentativa direta pela API.
