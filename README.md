@@ -27,7 +27,7 @@ Sistema multiplataforma de gestão documental.
 | 9 | Organização | 154–167 | 🟢 Concluída |
 | 10 | Pesquisa | 168–180 | 🟢 Concluída |
 | 11 | Usuários, Grupos e Permissões | 181–194 | 🟢 Concluída |
-| 12 | Auditoria e Histórico | 195–204 | ⚪ Planejada |
+| 12 | Auditoria e Histórico | 195–204 | 🟢 Concluída |
 | 13 | Integração Frontend ↔ Backend | 205–222 | ⚪ Planejada |
 | 14 | Responsividade e Acessibilidade | 223–238 | ⚪ Planejada |
 | 15 | Versão Web / GitHub Pages | 239–252 | ⚪ Planejada |
@@ -306,6 +306,22 @@ Sistema multiplataforma de gestão documental.
 - integridade dos registros.
 
 **Estado:** ⚪ Planejada.
+
+## Fase 12 — Auditoria e Histórico
+**Itens:** 195–204  
+**Objetivo:** garantir rastreabilidade das operações e integridade dos registros de auditoria.
+
+- criação, edição, exclusão e restauração;
+- alterações de permissões;
+- alterações administrativas;
+- autenticações relevantes;
+- consulta e filtros;
+- integridade criptográfica e detecção de adulteração;
+- redaction de dados sensíveis.
+
+**Documentação:** [Fase 12](docs/FASE_12_AUDITORIA_E_HISTORICO.md)
+
+**Estado:** 🟢 Concluída.
 
 ## Fase 13 — Integração Frontend ↔ Backend
 **Itens:** 205–222  
