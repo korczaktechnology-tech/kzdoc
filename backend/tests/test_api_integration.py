@@ -125,7 +125,7 @@ async def test_api_end_to_end() -> None:
     denied = client.get(f"/api/v1/documents/{document_id}", headers=second_headers)
     assert denied.status_code == 404
     second_folder = client.post("/api/v1/folders", headers=second_headers, json={"name": "Pasta privada"}).json()
-    cross_owner_move = client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"folder_id": second_folder["id"]})
+    cross_owner_move = client.patch(f"/api/v1/documents/{document_id}", headers=second_headers, json={"folder_id": second_folder["id"]})
     assert cross_owner_move.status_code == 404
 
     client.delete(f"/api/v1/documents/{document_id}", headers=second_headers)
