@@ -84,9 +84,9 @@ async def document_or_404(document_id: str, user_id: str, action: str = "read", 
         raise NotFoundError("Documento não encontrado")
     return document
 
-async def folder_or_404(folder_id: str, user_id: str, action: str = "read"):
+async def folder_or_404(folder_id: str, user_id: str, action: str = "read", allow_deleted: bool = False):
     folder = await repo.get_folder(folder_id)
-    if not folder or folder.get("status") == "deleted" or not await _allowed_by_acl(folder, user_id, action):
+    if not folder or (folder.get("status") == "deleted" and not allow_deleted) or not await _allowed_by_acl(folder, user_id, action):
         raise NotFoundError("Pasta não encontrada")
     return folder
 
