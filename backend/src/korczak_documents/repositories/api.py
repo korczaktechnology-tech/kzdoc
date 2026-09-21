@@ -128,7 +128,10 @@ async def update_folder(folder_id: str, changes: dict):
 
 
 async def delete_folder(folder_id: str):
-    await get_database()["pastas"].delete_one({"id": folder_id})
+    await get_database()["pastas"].update_one({"id": folder_id}, {"$set": {"status": "deleted", "updated_at": now()}})
+
+async def list_deleted_folders(owner_id: str):
+    return await get_database()["pastas"].find({"owner_id": owner_id, "status": "deleted"}).sort("updated_at", -1).to_list(length=1000)
 
 
 async def log_event(user_id: str | None, event_type: str, payload: dict):
