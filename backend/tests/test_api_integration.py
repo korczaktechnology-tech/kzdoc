@@ -42,6 +42,18 @@ async def test_api_end_to_end() -> None:
     ).json()
     document_id = document["id"]
     assert document["current_version_id"]
+    base_version_id = document["current_version_id"]
+    saved = client.post(f"/api/v1/documents/{document_id}/save", headers=headers, json={"name":"Documento de teste","document_type":"txt","content":"conteúdo pequeno salvo","base_version_id":base_version_id})
+    assert saved.status_code == 200
+    fresh = saved.json()
+    assert fresh["content"] == "conteúdo pequeno salvo"
+    stale = client.post(f"/api/v1/documents/{document_id}/save", headers=headers, json={"name":"Conflito","document_type":"txt","content":"alteração concorrente","base_version_id":base_version_id})
+    assert stale.status_code == 409
+    large_content = ("Korczak Documents " * 12000).strip()
+    current_version = fresh["current_version_id"]
+    large = client.post(f"/api/v1/documents/{document_id}/save", headers=headers, json={"name":"Documento grande","document_type":"txt","content":large_content,"base_version_id":current_version})
+    assert large.status_code == 200
+    assert len(large.json()["content"]) == len(large_content)
 
     assert client.get(f"/api/v1/documents/{document_id}", headers=headers).status_code == 200
     assert client.get("/api/v1/documents", headers=headers).status_code == 200
