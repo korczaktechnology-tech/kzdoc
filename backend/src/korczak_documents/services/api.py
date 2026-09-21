@@ -35,7 +35,11 @@ async def register(data):
 async def login(data):
     email = normalize_email(data.email)
     user = await repo.find_user_by_email(email)
-    if not user or user.get("status", "active") != "active" or not verify_password(data.password, user["password_hash"]):
+    if not user:
+        raise AppError("Credenciais inválidas", "invalid_credentials", 401)
+    if user.get("status", "active") != "active":
+        raise AppError("Conta indisponível", "account_unavailable", 403)
+    if not verify_password(data.password, user["password_hash"]):
         raise AppError("Credenciais inválidas", "invalid_credentials", 401)
     token, expires_at = await create_session(user["id"])
     await repo.log_event(user["id"], "auth.login", {"user_id": user["id"]})
