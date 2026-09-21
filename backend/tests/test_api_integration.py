@@ -34,6 +34,7 @@ async def test_api_end_to_end() -> None:
 
     folder = client.post("/api/v1/folders", headers=headers, json={"name": "Projetos"}).json()
     assert client.patch(f"/api/v1/folders/{folder['id']}", headers=headers, json={"name": "Projetos 2026"}).status_code == 200
+    assert client.get("/api/v1/folders", headers=headers).json()[0]["name"] == "Projetos 2026"
 
     document = client.post(
         "/api/v1/documents",
@@ -57,7 +58,10 @@ async def test_api_end_to_end() -> None:
 
     assert client.get(f"/api/v1/documents/{document_id}", headers=headers).status_code == 200
     assert client.get("/api/v1/documents", headers=headers).status_code == 200
-    assert client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"name": "Documento atualizado"}).status_code == 200
+    moved = client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"name": "Documento atualizado", "folder_id": None})
+    assert moved.status_code == 200 and moved.json()["folder_id"] is None
+    moved_back = client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"folder_id": folder["id"]})
+    assert moved_back.status_code == 200 and moved_back.json()["folder_id"] == folder["id"]
     assert client.post(f"/api/v1/documents/{document_id}/versions", headers=headers, json={"content": "v2"}).status_code == 201
     assert client.get(f"/api/v1/documents/{document_id}/versions", headers=headers).status_code == 200
     versions = client.get(f"/api/v1/documents/{document_id}/versions", headers=headers).json()
@@ -123,6 +127,11 @@ async def test_api_end_to_end() -> None:
     assert client.post(f"/api/v1/documents/{own['id']}/restore", headers=second_headers).status_code == 200
     assert client.delete(f"/api/v1/documents/{own['id']}", headers=second_headers).status_code == 200
     assert client.delete(f"/api/v1/documents/{own['id']}/permanent", headers=second_headers).status_code == 200
+    folder_two = client.post("/api/v1/folders", headers=second_headers, json={"name": "Pasta para restaurar"}).json()
+    assert client.delete(f"/api/v1/folders/{folder_two['id']}", headers=second_headers).status_code == 200
+    assert folder_two['id'] in [f['id'] for f in client.get("/api/v1/folders/trash", headers=second_headers).json()]
+    assert client.post(f"/api/v1/folders/{folder_two['id']}/restore", headers=second_headers, json={}).status_code == 200
+    assert folder_two['id'] in [f['id'] for f in client.get("/api/v1/folders", headers=second_headers).json()]
 
     await database["usuarios"].delete_many({})
     await database["documentos"].delete_many({})
