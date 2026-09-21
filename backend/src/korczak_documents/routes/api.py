@@ -110,7 +110,7 @@ async def create_document(payload: DocumentCreateRequest, user=Depends(current_u
 
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document(document_id: str, user=Depends(current_user)):
-    document = await service.document_or_404(document_id, user["id"])
+    document = await service.document_or_404(document_id, user["id"], "write")
     version = await get_database()["versoes"].find_one({"id": document.get("current_version_id")}) if document.get("current_version_id") else None
     return DocumentResponse(**document, content=version.get("content") if version else None, favorite=user["id"] in document.get("favorite_user_ids", []))
 
@@ -128,7 +128,7 @@ async def save_document(document_id: str, payload: DocumentSaveRequest, user=Dep
 
 @router.patch("/documents/{document_id}", response_model=DocumentResponse)
 async def update_document(document_id: str, payload: DocumentUpdateRequest, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "write")
     changes = payload.model_dump(exclude_unset=True)
     if "folder_id" in changes and changes["folder_id"] is not None:
         target_folder = await service.folder_or_404(changes["folder_id"], user["id"])
@@ -141,7 +141,7 @@ async def update_document(document_id: str, payload: DocumentUpdateRequest, user
 
 @router.delete("/documents/{document_id}")
 async def delete_document(document_id: str, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "delete")
     await repo.update_document(document_id, {"status": "deleted"})
     await repo.log_event(user["id"], "document.deleted", {"document_id": document_id})
     return {"message": "Documento movido para a lixeira"}
@@ -174,7 +174,7 @@ async def versions(document_id: str, user=Depends(current_user)):
 
 @router.post("/documents/{document_id}/versions", response_model=VersionResponse, status_code=201)
 async def create_version(document_id: str, payload: VersionCreateRequest, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "write")
     version = await repo.create_version(document_id, user["id"], payload.content, await service.version_number(document_id))
     await repo.log_event(user["id"], "document.version_created", {"document_id": document_id, "version_id": version["id"]})
     return version
@@ -232,7 +232,7 @@ async def create_folder(payload: FolderCreateRequest, user=Depends(current_user)
 
 @router.patch("/folders/{folder_id}", response_model=FolderResponse)
 async def update_folder(folder_id: str, payload: FolderUpdateRequest, user=Depends(current_user)):
-    await service.folder_or_404(folder_id, user["id"])
+    await service.folder_or_404(folder_id, user["id"], "write")
     changes = payload.model_dump(exclude_unset=True)
     if changes.get("parent_id"):
         parent = await service.folder_or_404(changes["parent_id"], user["id"])
@@ -245,7 +245,7 @@ async def update_folder(folder_id: str, payload: FolderUpdateRequest, user=Depen
 
 @router.delete("/folders/{folder_id}")
 async def delete_folder(folder_id: str, user=Depends(current_user)):
-    await service.folder_or_404(folder_id, user["id"])
+    await service.folder_or_404(folder_id, user["id"], "delete")
     await repo.delete_folder(folder_id)
     await repo.log_event(user["id"], "folder.deleted", {"folder_id": folder_id})
     return {"message": "Pasta excluída"}
