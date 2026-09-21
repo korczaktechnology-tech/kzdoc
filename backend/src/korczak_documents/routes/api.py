@@ -205,7 +205,9 @@ async def restore_folder(folder_id: str, user=Depends(current_user)):
 @router.post("/folders", response_model=FolderResponse, status_code=201)
 async def create_folder(payload: FolderCreateRequest, user=Depends(current_user)):
     if payload.parent_id:
-        await service.folder_or_404(payload.parent_id, user["id"])
+        parent = await service.folder_or_404(payload.parent_id, user["id"])
+        if parent.get("status") == "deleted":
+            raise AppError("A pasta pai está na lixeira.", "parent_folder_deleted", 409)
     folder = await repo.create_folder(user["id"], payload.model_dump())
     await repo.log_event(user["id"], "folder.created", {"folder_id": folder["id"]})
     return folder
