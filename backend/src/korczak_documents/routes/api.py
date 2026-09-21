@@ -257,6 +257,7 @@ async def create_tag(payload: TagCreateRequest, user=Depends(current_user)):
 async def delete_tag(tag_name: str, user=Depends(current_user)):
     tag = await service.tag_or_404(tag_name, user["id"])
     await get_database()["etiquetas"].delete_one({"id": tag["id"]})
+    await get_database()["documentos"].update_many({"owner_id": user["id"]}, {"$pull": {"tag_names": tag_name}})
     await repo.log_event(user["id"], "tag.deleted", {"tag_id": tag["id"]})
     return {"message": "Etiqueta removida"}
 
