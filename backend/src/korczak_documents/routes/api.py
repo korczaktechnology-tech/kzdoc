@@ -200,6 +200,11 @@ async def folders(user=Depends(current_user)):
 async def deleted_folders(user=Depends(current_user)):
     return await repo.list_deleted_folders(user["id"])
 
+@router.get("/folders/{folder_id}", response_model=FolderResponse)
+async def get_folder(folder_id: str, user=Depends(current_user)):
+    return await service.folder_or_404(folder_id, user["id"])
+
+
 @router.post("/folders/{folder_id}/restore")
 async def restore_folder(folder_id: str, user=Depends(current_user)):
     folder = await service.folder_or_404(folder_id, user["id"], "delete", allow_deleted=True)
