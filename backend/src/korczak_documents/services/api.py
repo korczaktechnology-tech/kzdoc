@@ -58,15 +58,25 @@ async def _group_ids_for_user(user_id: str) -> set[str]:
     return {g["id"] for g in groups}
 
 async def _allowed_by_acl(resource: dict, user_id: str, action: str) -> bool:
+    user = await repo.find_user(user_id)
+    if user and user.get("role") == "admin":
+        return True
     if resource.get("owner_id") == user_id:
         return True
     acl = resource.get("permissions") or {}
-    if action not in acl.get("actions", []):
-        return False
-    if user_id in acl.get("user_ids", []):
-        return True
-    group_ids = await _group_ids_for_user(user_id)
-    return bool(group_ids.intersection(set(acl.get("group_ids", []))))
+    if action in acl.get("actions", []):
+        if user_id in acl.get("user_ids", []):
+            return True
+        group_ids = await _group_ids_for_user(user_id)
+        if group_ids.intersection(set(acl.get("group_ids", []))):
+            return True
+    # Folder permissions define an area and can grant access to documents inside it.
+    folder_id = resource.get("folder_id")
+    if folder_id:
+        folder = await repo.get_folder(folder_id)
+        if folder:
+            return await _allowed_by_acl(folder, user_id, action)
+    return False
 
 async def document_or_404(document_id: str, user_id: str, action: str = "read"):
     document = await repo.get_document(document_id)
