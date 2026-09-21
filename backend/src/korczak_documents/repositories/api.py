@@ -138,7 +138,7 @@ async def list_deleted_folders(owner_id: str):
 
 async def log_event(user_id: str | None, event_type: str, payload: dict):
     event_id = str(uuid4())
-    created = now()
+    created = now().replace(microsecond=(now().microsecond // 1000) * 1000)
     safe_payload = _redact_payload(payload)
     resource = str(safe_payload.get("resource") or ("document" if "document_id" in safe_payload else "folder" if "folder_id" in safe_payload else "user" if "target_user_id" in safe_payload else "group" if "group_id" in safe_payload else "system"))
     resource_id = safe_payload.get("resource_id") or safe_payload.get("document_id") or safe_payload.get("folder_id") or safe_payload.get("target_user_id") or safe_payload.get("group_id")
