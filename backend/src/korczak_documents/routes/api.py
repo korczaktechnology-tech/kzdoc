@@ -70,8 +70,9 @@ async def admin_create_user(payload: AdminUserCreateRequest, user=Depends(curren
 
 @router.get("/users", response_model=list[UserResponse])
 async def users(user=Depends(current_user)):
-    require_role(user, "admin")
-    items = await get_database()["usuarios"].find({}, {"password_hash": 0}).sort("name", 1).to_list(length=1000)
+    require_role(user, "manager")
+    query = {} if user["role"] == "admin" else {"role": {"$ne": "admin"}}
+    items = await get_database()["usuarios"].find(query, {"password_hash": 0}).sort("name", 1).to_list(length=1000)
     return [service.clean_user(item) for item in items]
 
 
