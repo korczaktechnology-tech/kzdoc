@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
+import hashlib
+import json
 
 from ..database.connection import get_database
 
@@ -135,12 +137,33 @@ async def list_deleted_folders(owner_id: str):
 
 
 async def log_event(user_id: str | None, event_type: str, payload: dict):
-    await get_database()["eventos"].insert_one({"id": str(uuid4()), "user_id": user_id, "type": event_type, "payload": _redact_payload(payload), "created_at": now()})
+    event_id = str(uuid4())
+    created = now()
+    safe_payload = _redact_payload(payload)
+    resource = str(safe_payload.get("resource") or ("document" if "document_id" in safe_payload else "folder" if "folder_id" in safe_payload else "user" if "target_user_id" in safe_payload else "group" if "group_id" in safe_payload else "system"))
+    resource_id = safe_payload.get("resource_id") or safe_payload.get("document_id") or safe_payload.get("folder_id") or safe_payload.get("target_user_id") or safe_payload.get("group_id")
+    result = str(safe_payload.get("result") or "success")
+    canonical = json.dumps({"id": event_id, "user_id": user_id, "type": event_type, "payload": safe_payload, "created_at": created.isoformat(), "resource": resource, "resource_id": resource_id, "result": result}, sort_keys=True, default=str, separators=(",", ":"))
+    integrity_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    await get_database()["eventos"].insert_one({
+        "id": event_id, "user_id": user_id, "actor_id": user_id, "type": event_type,
+        "action": event_type, "resource": resource, "resource_id": resource_id, "result": result,
+        "payload": safe_payload, "created_at": created, "integrity_hash": integrity_hash
+    })
 
 
 async def list_events(user_id: str, filters: dict, skip: int, limit: int):
     collection = get_database()["eventos"]
     query = {"user_id": user_id, **filters}
+    total = await collection.count_documents(query)
+    items = await collection.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
+    return items, total
+
+
+async def list_audit_events(actor_id: str, filters: dict, skip: int, limit: int, global_view: bool = False):
+    collection = get_database()["eventos"]
+    query = {} if global_view else {"user_id": actor_id}
+    query.update(filters)
     total = await collection.count_documents(query)
     items = await collection.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
     return items, total
