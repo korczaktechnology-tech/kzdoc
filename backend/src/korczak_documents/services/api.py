@@ -63,7 +63,7 @@ async def _group_ids_for_user(user_id: str) -> set[str]:
 
 async def _allowed_by_acl(resource: dict, user_id: str, action: str) -> bool:
     user = await repo.find_user(user_id)
-    if user and user.get("role") == "admin":
+    if user and user.get("role") in {"admin", "manager"}:
         return True
     if resource.get("owner_id") == user_id:
         return True
