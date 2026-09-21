@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {DocumentItem,Version} from '../services/api';
+import {clearDraft,draftKey,preserveDraft,recoverDraft} from './editorPersistence';
 
 export type SaveState='saved'|'dirty'|'saving'|'conflict'|'error';
 const escapeHtml=(value:string)=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -19,16 +20,15 @@ export function markdownToHtml(source:string){
   } close(); return html||'<p><br></p>';
 }
 function inline(value:string){return value.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noreferrer">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/_([^_]+)_/g,'<em>$1</em>').replace(/~~([^~]+)~~/g,'<s>$1</s>');}
-function draftKey(id:string){return 'kzdoc:draft:'+id}
 function toolbarInsert(value:string,start:number,end:number,text:string){const before=text.slice(0,start),selected=text.slice(start,end),after=text.slice(end);const marker=value.indexOf('$');const next=value.replace('$',selected);return{text:before+next+after,start:start+marker,end:start+marker+(selected||'').length};}
 function applyWrap(text:string,start:number,end:number,left:string,right=left){const selected=text.slice(start,end)||'texto';const next=text.slice(0,start)+left+selected+right+text.slice(end);return{text:next,start:start+left.length,end:start+left.length+selected.length};}
 
 export function Editor({document,versions,onSave,onClose,onConflict}:{document:DocumentItem;versions:Version[];onSave:(data:{name:string;document_type:string;content:string;base_version_id:string|null})=>Promise<'saved'|'conflict'>;onClose:()=>void;onConflict:()=>Promise<DocumentItem>}){
   const initial=document.content||'';const[name,setName]=useState(document.name);const[type,setType]=useState(document.document_type);const[content,setContent]=useState(initial);const[state,setState]=useState<SaveState>('saved');const[message,setMessage]=useState('Salvo');const[readOnly,setReadOnly]=useState(false);
   const history=useRef<string[]>([initial]),future=useRef<string[]>([]),timer=useRef<number|undefined>(undefined);const textarea=useRef<HTMLTextAreaElement>(null);
-  const draft=useMemo(()=>{try{return localStorage.getItem(draftKey(document.id))}catch{return null}},[document.id]);
+  const draft=useMemo(()=>{try{return recoverDraft(localStorage,document.id)}catch{return null}},[document.id]);
   useEffect(()=>{if(draft!==null&&draft!==initial){setContent(draft);setState('dirty');setMessage('Rascunho local recuperado')}},[draft,initial]);
-  useEffect(()=>{const saveDraft=()=>{if(state!=='saved'){try{localStorage.setItem(draftKey(document.id),content)}catch{}}};window.addEventListener('visibilitychange',saveDraft);return()=>window.removeEventListener('visibilitychange',saveDraft)},[content,state,document.id]);
+  useEffect(()=>{const saveDraft=()=>{if(state!=='saved'){try{preserveDraft(localStorage,document.id,content)}catch{}}};window.addEventListener('visibilitychange',saveDraft);return()=>window.removeEventListener('visibilitychange',saveDraft)},[content,state,document.id]);
   useEffect(()=>{const before=(e:BeforeUnloadEvent)=>{if(state==='dirty'||state==='saving'||state==='conflict'){e.preventDefault();e.returnValue=true}};window.addEventListener('beforeunload',before);return()=>window.removeEventListener('beforeunload',before)},[state]);
   useEffect(()=>()=>{if(timer.current)window.clearTimeout(timer.current)},[]);
   function change(next:string){setContent(next);setState('dirty');setMessage('Alterações não salvas');future.current=[];const h=history.current;if(h[h.length-1]!==next){h.push(next);if(h.length>80)h.shift()}}
@@ -38,7 +38,7 @@ export function Editor({document,versions,onSave,onClose,onConflict}:{document:D
   function command(cmd:string){if(cmd==='bold')wrap('**');else if(cmd==='italic')wrap('*');else if(cmd==='strike')wrap('~~');else if(cmd==='h1')insert('# $\n');else if(cmd==='h2')insert('## $\n');else if(cmd==='h3')insert('### $\n');else if(cmd==='ul')insert('- $\n');else if(cmd==='ol')insert('1. $\n');else if(cmd==='quote')insert('> $\n');else if(cmd==='code')wrap(String.fromCharCode(96));else if(cmd==='link'){const url=window.prompt('URL do link:','https://');if(url)insert('[$]('+url+')')}else if(cmd==='table')insert('| Coluna 1 | Coluna 2 |\n| --- | --- |\n| $ | Valor |\n');}
   function undo(){if(history.current.length<2)return;const current=history.current.pop()!;future.current.push(current);setContent(history.current[history.current.length-1]);setState('dirty');setMessage('Alterações não salvas')}
   function redo(){const next=future.current.pop();if(!next)return;history.current.push(next);setContent(next);setState('dirty');setMessage('Alterações não salvas')}
-  async function save(){if(readOnly||state==='saving')return;setState('saving');setMessage('Salvando…');try{const result=await onSave({name,document_type:type,content,base_version_id:document.current_version_id});if(result==='conflict'){setState('conflict');setMessage('Conflito: o documento foi alterado em outra sessão');return}try{localStorage.removeItem(draftKey(document.id))}catch{}history.current=[content];future.current=[];setState('saved');setMessage('Salvo agora')}catch{try{localStorage.setItem(draftKey(document.id),content)}catch{}setState('error');setMessage('Falha ao salvar. O rascunho local foi preservado.')}}
+  async function save(){if(readOnly||state==='saving')return;setState('saving');setMessage('Salvando…');try{const result=await onSave({name,document_type:type,content,base_version_id:document.current_version_id});if(result==='conflict'){setState('conflict');setMessage('Conflito: o documento foi alterado em outra sessão');return}try{clearDraft(localStorage,document.id)}catch{}history.current=[content];future.current=[];setState('saved');setMessage('Salvo agora')}catch{try{localStorage.setItem(draftKey(document.id),content)}catch{}setState('error');setMessage('Falha ao salvar. O rascunho local foi preservado.')}}
   useEffect(()=>{if(state!=='dirty')return;if(timer.current)window.clearTimeout(timer.current);timer.current=window.setTimeout(()=>{void save()},1400)},[content,name,type]);
   const toolbar=[['bold','B','Negrito'],['italic','I','Itálico'],['strike','S','Riscado'],['h1','H1','Título 1'],['h2','H2','Título 2'],['h3','H3','Título 3'],['ul','•','Lista'],['ol','1.','Lista numerada'],['quote','❯','Citação'],['code','<>','Código'],['link','↗','Link'],['table','▦','Tabela']];
   return <section className="editor-workspace">
