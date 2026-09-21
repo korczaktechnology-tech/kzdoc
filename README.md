@@ -23,7 +23,7 @@ Sistema multiplataforma de gestão documental.
 | 5 | Autenticação e Segurança | 85–100 | 🟢 Concluída |
 | 6 | Interface Web | 101–114 | 🟢 Concluída |
 | 7 | Telas Principais | 115–135 | 🟢 Concluída |
-| 8 | Editor de Documentos | 136–153 | ⚪ Planejada |
+| 8 | Editor de Documentos | 136–153 | 🟢 Concluída |
 | 9 | Organização | 154–167 | ⚪ Planejada |
 | 10 | Pesquisa | 168–180 | ⚪ Planejada |
 | 11 | Usuários, Grupos e Permissões | 181–194 | ⚪ Planejada |
@@ -230,7 +230,7 @@ Sistema multiplataforma de gestão documental.
 - interrupção durante salvamento;
 - abertura simultânea.
 
-**Estado:** ⚪ Planejada.
+**Estado:** 🟢 Concluída.
 
 ## Fase 9 — Organização
 **Itens:** 154–167  
@@ -712,6 +712,7 @@ O projeto só deve ser considerado 100% concluído quando os itens **1–503** e
 - [Fase 5](docs/FASE_5_AUTENTICACAO_E_SEGURANCA.md)
 - [Fase 6](docs/FASE_6_INTERFACE_WEB.md)
 - [Fase 7](docs/FASE_7_TELAS_PRINCIPAIS.md)
+- [Fase 8](docs/FASE_8_EDITOR_DE_DOCUMENTOS.md)
 - Fase 8 — Editor de Documentos
 - Fase 9 — Organização
 - Fase 10 — Pesquisa
