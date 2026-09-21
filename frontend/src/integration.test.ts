@@ -40,7 +40,7 @@ describe('Fase 13 — integração do cliente HTTP',()=>{
   });
 
   it('aceita respostas vazias de operações sem corpo JSON',async()=>{
-    vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('',{status:204}));
+    vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(null,{status:204}));
     await expect(api.logout()).resolves.toEqual({});
   });
 
