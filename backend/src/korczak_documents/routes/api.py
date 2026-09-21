@@ -117,7 +117,7 @@ async def get_document(document_id: str, user=Depends(current_user)):
 
 @router.post("/documents/{document_id}/save", response_model=DocumentResponse)
 async def save_document(document_id: str, payload: DocumentSaveRequest, user=Depends(current_user)):
-    document=await service.document_or_404(document_id,user["id"])
+    document=await service.document_or_404(document_id,user["id"],"write")
     result=await repo.save_document(document_id,user["id"],payload.model_dump(),payload.base_version_id)
     if not result:
         raise AppError("O documento foi alterado em outra sessão. Recarregue a versão atual antes de salvar.", "document_conflict", 409)
@@ -182,7 +182,7 @@ async def create_version(document_id: str, payload: VersionCreateRequest, user=D
 
 @router.post("/documents/{document_id}/versions/{version_id}/restore")
 async def restore_version(document_id: str, version_id: str, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "write")
     version = await get_database()["versoes"].find_one({"id": version_id, "document_id": document_id})
     if not version:
         raise NotFoundError("Versão não encontrada")
