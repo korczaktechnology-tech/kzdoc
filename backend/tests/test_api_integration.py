@@ -101,6 +101,10 @@ async def test_api_end_to_end() -> None:
     assert client.get("/api/v1/search", headers=headers, params={"owner_id": "outro"}).status_code == 403
     assert client.get("/api/v1/search", headers=headers, params={"status_filter": "active", "date_from": "2026-01-01", "date_to": "2026-12-31"}).status_code == 200
     assert client.get("/api/v1/search", headers=headers, params={"sort": "name_asc", "page": 2, "page_size": 1}).status_code == 200
+    bulk = [{"id": str(uuid4()), "owner_id": user_id, "name": f"Grande {n}", "document_type": "txt", "description": "lote grande", "folder_id": folder["id"], "current_version_id": None, "status": "active", "favorite_user_ids": [], "tag_names": [], "created_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc), "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc)} for n in range(120)]
+    await database["documentos"].insert_many(bulk)
+    large = client.get("/api/v1/search", headers=headers, params={"q": "lote grande", "page": 5, "page_size": 25})
+    assert large.status_code == 200 and large.json()["total"] == 120 and len(large.json()["items"]) == 20
     assert client.get("/api/v1/search", headers=headers, params={"status_filter": "active", "date_from": "2026-01-01", "date_to": "2026-12-31"}).status_code == 200
     assert client.get("/api/v1/audit", headers=headers).status_code == 200
     assert client.get("/api/v1/notifications", headers=headers).status_code == 200
