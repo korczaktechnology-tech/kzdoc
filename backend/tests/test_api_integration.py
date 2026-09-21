@@ -131,6 +131,29 @@ async def test_api_end_to_end() -> None:
         headers=headers,
         json={"role": "editor", "actions": ["read", "write"], "user_ids": [], "group_ids": []},
     ).status_code == 200
+    bad_login = client.post("/api/v1/auth/login", json={"email": user_email, "password": "senha-incorreta"})
+    assert bad_login.status_code == 401
+
+    audit_all = client.get("/api/v1/audit", headers=headers, params={"page": 1, "page_size": 100})
+    assert audit_all.status_code == 200
+    audit_items = audit_all.json()["items"]
+    assert audit_all.json()["total"] >= 1
+    assert all(item["integrity_valid"] is True for item in audit_items if item.get("integrity_hash"))
+    assert any(item["type"] == "document.created" for item in audit_items)
+    assert any(item["type"] == "permission.changed" for item in audit_items)
+    assert any(item["type"] == "auth.login_failed" for item in audit_items)
+    filtered = client.get("/api/v1/audit", headers=headers, params={"event_type": "permission.changed", "resource": "document"})
+    assert filtered.status_code == 200
+    assert all(item["type"] == "permission.changed" for item in filtered.json()["items"])
+
+    event = await database["eventos"].find_one({"type": "document.created", "user_id": user_id})
+    assert event and event.get("integrity_hash")
+    original_hash = event["integrity_hash"]
+    await database["eventos"].update_one({"id": event["id"]}, {"$set": {"payload.document_id": "tampered"}})
+    tampered = await database["eventos"].find_one({"id": event["id"]})
+    assert tampered["integrity_hash"] == original_hash
+    assert repo.event_integrity_valid(tampered) is False
+    await database["eventos"].update_one({"id": event["id"]}, {"$set": {"payload.document_id": document_id}})
 
     created_user = client.post("/api/v1/users", headers=headers, json={"name": "Usuário Fase 11", "email": f"fase11-{uuid4().hex}@example.com", "password": "Korczak-Fase11-2026!", "role": "manager"})
     assert created_user.status_code == 201
