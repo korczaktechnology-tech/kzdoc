@@ -12,6 +12,12 @@ describe('proteção de rascunho da Fase 8',()=>{
     await expect(saveWithDraftFallback(s,'doc-3','conteúdo pendente',async()=>{throw new Error('falha de rede')})).rejects.toThrow('falha de rede');
     expect(recoverDraft(s,'doc-3')).toBe('conteúdo pendente');
   });
+  it('preserva o rascunho quando o servidor devolve conflito',async()=>{
+    const s=storage();
+    const result=await saveWithDraftFallback(s,'doc-4','alteração local',async()=> 'conflict',value=>value==='saved');
+    expect(result).toBe('conflict');
+    expect(recoverDraft(s,'doc-4')).toBe('alteração local');
+  });
 });
   it('remove o rascunho depois de uma confirmação de salvamento',()=>{
     const s=storage(); preserveDraft(s,'doc-2','salvo');
