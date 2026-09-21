@@ -218,7 +218,9 @@ async def update_folder(folder_id: str, payload: FolderUpdateRequest, user=Depen
     await service.folder_or_404(folder_id, user["id"])
     changes = payload.model_dump(exclude_unset=True)
     if changes.get("parent_id"):
-        await service.folder_or_404(changes["parent_id"], user["id"])
+        parent = await service.folder_or_404(changes["parent_id"], user["id"])
+        if parent.get("status") == "deleted":
+            raise AppError("A pasta pai está na lixeira.", "parent_folder_deleted", 409)
     folder = await repo.update_folder(folder_id, changes)
     await repo.log_event(user["id"], "folder.updated", {"folder_id": folder_id})
     return folder
