@@ -491,11 +491,34 @@ async def set_folder_permissions(folder_id: str, payload: PermissionRequest, use
     return {"folder_id":folder_id,"owner_id":folder["owner_id"],**policy}
 
 @router.get("/audit")
-async def audit(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100), event_type: str | None = None, document_id: str | None = None, user=Depends(current_user)):
+async def audit(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    event_type: str | None = None,
+    document_id: str | None = None,
+    actor_id: str | None = None,
+    resource: str | None = None,
+    result: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    user=Depends(current_user),
+):
     skip, limit = service.page_values(page, page_size)
-    filters = {"type": event_type} if event_type else {}
+    global_view = role_allows(user, "manager")
+    if actor_id and not global_view and actor_id != user["id"]:
+        raise AppError("Sem permissão para consultar a auditoria de outro usuário.", "forbidden", 403)
+    filters = {}
+    if event_type: filters["type"] = event_type
     if document_id: filters["payload.document_id"] = document_id
-    items, total = await repo.list_events(user["id"], filters, skip, limit)
+    if actor_id: filters["actor_id"] = actor_id
+    if resource: filters["resource"] = resource
+    if result: filters["result"] = result
+    if date_from or date_to:
+        date_filter = {}
+        if date_from: date_filter["$gte"] = datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc)
+        if date_to: date_filter["$lt"] = datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc) + timedelta(days=1)
+        filters["created_at"] = date_filter
+    items, total = await repo.list_audit_events(user["id"], filters, skip, limit, global_view=global_view)
     return {"items": [without_mongo_id(item) for item in items], "total": total, "page": page, "page_size": page_size}
 
 
