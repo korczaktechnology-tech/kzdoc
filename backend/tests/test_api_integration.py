@@ -178,6 +178,9 @@ async def test_api_end_to_end() -> None:
     second_email = f"phase4-other-{uuid4().hex}@example.com"
     second = client.post("/api/v1/auth/register", json={"name": "Outro", "email": second_email, "password": password})
     second_headers = {"Authorization": f"Bearer {second.json()['token']}"}
+    assert client.post("/api/v1/groups", headers=second_headers, json={"name":"Grupo não autorizado"}).status_code == 403
+    manager_admin_edit = client.patch(f"/api/v1/users/{user_id}", headers=manager_headers, json={"status":"inactive"})
+    assert manager_admin_edit.status_code == 403
     group_acl = client.post("/api/v1/groups", headers=headers, json={"name":"ACL direta"})
     assert group_acl.status_code == 201
     group_acl_id = group_acl.json()["id"]
