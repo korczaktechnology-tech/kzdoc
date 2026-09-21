@@ -38,8 +38,8 @@ export function Editor({document,versions,onSave,onClose,onConflict}:{document:D
   const initial=document.content||'';const[name,setName]=useState(document.name);const[type,setType]=useState(document.document_type);const[content,setContent]=useState(initial);const[state,setState]=useState<SaveState>('saved');const[message,setMessage]=useState('Salvo');const[readOnly,setReadOnly]=useState(false);
   const history=useRef<string[]>([initial]),future=useRef<string[]>([]),timer=useRef<number|undefined>(undefined);const textarea=useRef<HTMLTextAreaElement>(null);
   const draft=useMemo(()=>{try{return recoverDraft(localStorage,document.id)}catch{return null}},[document.id]);
-  useEffect(()=>{if(draft!==null&&draft!==initial){setContent(draft);setState('dirty');setMessage('Rascunho local recuperado')}},[draft,initial]);
   useEffect(()=>{setName(document.name);setType(document.document_type);setContent(document.content||'');history.current=[document.content||''];future.current=[];setState('saved');setMessage('Salvo')},[document.id]);
+  useEffect(()=>{if(draft!==null&&draft!==initial){setContent(draft);setState('dirty');setMessage('Rascunho local recuperado')}},[draft,initial]);
   useEffect(()=>{const saveDraft=()=>{if(state!=='saved'){try{preserveDraft(localStorage,document.id,content)}catch{}}};window.addEventListener('visibilitychange',saveDraft);return()=>window.removeEventListener('visibilitychange',saveDraft)},[content,state,document.id]);
   useEffect(()=>{const before=(e:BeforeUnloadEvent)=>{if(state==='dirty'||state==='saving'||state==='conflict'){e.preventDefault();e.returnValue=true}};window.addEventListener('beforeunload',before);return()=>window.removeEventListener('beforeunload',before)},[state]);
   useEffect(()=>()=>{if(timer.current)window.clearTimeout(timer.current)},[]);
