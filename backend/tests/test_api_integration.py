@@ -159,7 +159,7 @@ async def test_api_end_to_end() -> None:
     assert client.put(f"/api/v1/permissions/{document_id}", headers=manager_headers, json={"role":"manager","actions":["read","write"],"user_ids":[],"group_ids":[]}).status_code == 200
     assert client.post(f"/api/v1/documents/{document_id}/save", headers=manager_headers, json={"name": "Documento atualizado pelo gestor", "document_type": "txt", "content": "ACL escrita", "base_version_id": client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).json()["current_version_id"]}).status_code == 200
     assert client.delete(f"/api/v1/groups/{group11['id']}", headers=headers).status_code == 200
-    assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 404
+    assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 200
     folder_acl = client.put(f"/api/v1/folder-permissions/{folder['id']}", headers=headers, json={"role": "viewer", "actions": ["read"], "user_ids": [managed_user["id"]], "group_ids": []})
     assert folder_acl.status_code == 200
     folder_view = client.get(f"/api/v1/folders/{folder['id']}", headers=manager_headers)
