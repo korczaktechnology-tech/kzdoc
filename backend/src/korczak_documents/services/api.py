@@ -36,7 +36,7 @@ async def login(data):
     email = normalize_email(data.email)
     user = await repo.find_user_by_email(email)
     if not user:
-        await repo.log_event(None, "auth.login_failed", {"email": email, "reason": "unknown_account", "result": "failure"})
+        await repo.log_event(None, "auth.login_failed", {"reason": "unknown_account", "result": "failure"})
         raise AppError("Credenciais inválidas", "invalid_credentials", 401)
     if user.get("status", "active") != "active":
         await repo.log_event(user["id"], "auth.login_failed", {"user_id": user["id"], "reason": "account_unavailable", "result": "failure"})
