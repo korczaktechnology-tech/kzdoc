@@ -70,14 +70,14 @@ async def admin_create_user(payload: AdminUserCreateRequest, user=Depends(curren
 
 @router.get("/users", response_model=list[UserResponse])
 async def users(user=Depends(current_user)):
-    require_role(user, "manager")
+    require_role(user, "admin")
     items = await get_database()["usuarios"].find({}, {"password_hash": 0}).sort("name", 1).to_list(length=1000)
     return [service.clean_user(item) for item in items]
 
 
 @router.patch("/users/{user_id}", response_model=UserResponse)
 async def admin_update_user(user_id: str, payload: AdminUserUpdateRequest, user=Depends(current_user)):
-    require_role(user, "manager")
+    require_role(user, "admin")
     target = await repo.find_user(user_id)
     if not target:
         raise NotFoundError("Usuário não encontrado")
