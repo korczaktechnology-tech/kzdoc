@@ -23,3 +23,5 @@ async def ensure_indexes(database) -> None:
     await database["documentos"].create_index([("name", "text"), ("description", "text"), ("document_type", "text")], name="document_search_text")
     await database["versoes"].create_index([("content", "text")], name="version_content_search_text")
     await database["sessoes"].create_index("expires_at", expireAfterSeconds=0, name="session_expiry")
+    await database["eventos"].create_index([("actor_id", ASCENDING), ("created_at", DESCENDING)], name="audit_actor_created_at")
+    await database["eventos"].create_index([("resource", ASCENDING), ("created_at", DESCENDING)], name="audit_resource_created_at")
