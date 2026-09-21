@@ -6,7 +6,7 @@ export type Version={id:string;document_id:string;version_number:number;author_i
 export type Folder={id:string;owner_id:string;parent_id:string|null;name:string;created_at:string;updated_at:string};
 export type Notification={id:string;user_id:string;type:string;message:string;read:boolean;created_at:string};
 export type Group={id:string;owner_id:string;name:string;member_ids:string[];created_at:string;updated_at:string};
-export type Event={id:string;user_id:string|null;type:string;payload:Record<string,unknown>;created_at:string};
+export type Event={id:string;user_id:string|null;actor_id?:string|null;type:string;action?:string;resource?:string;resource_id?:string|null;result?:string;payload:Record<string,unknown>;created_at:string;integrity_hash?:string;integrity_valid?:boolean};
 export class ApiError extends Error{status:number;code?:string;constructor(message:string,status:number,code?:string){super(message);this.name='ApiError';this.status=status;this.code=code}}
 const KEY='korczak_documents_token';const BASE=(import.meta.env.VITE_API_BASE_URL||'http://127.0.0.1:8000').replace(/\/$/,'');
 export const getToken=()=>localStorage.getItem(KEY);export const clearToken=()=>localStorage.removeItem(KEY);export const saveSession=(s:Session)=>localStorage.setItem(KEY,s.token);
