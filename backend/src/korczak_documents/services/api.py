@@ -78,9 +78,9 @@ async def _allowed_by_acl(resource: dict, user_id: str, action: str) -> bool:
             return await _allowed_by_acl(folder, user_id, action)
     return False
 
-async def document_or_404(document_id: str, user_id: str, action: str = "read"):
+async def document_or_404(document_id: str, user_id: str, action: str = "read", allow_deleted: bool = False):
     document = await repo.get_document(document_id)
-    if not document or document.get("status") == "deleted" or not await _allowed_by_acl(document, user_id, action):
+    if not document or (document.get("status") == "deleted" and not allow_deleted) or not await _allowed_by_acl(document, user_id, action):
         raise NotFoundError("Documento não encontrado")
     return document
 
