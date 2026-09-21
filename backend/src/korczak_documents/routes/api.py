@@ -103,6 +103,17 @@ async def get_document(document_id: str, user=Depends(current_user)):
     return DocumentResponse(**document, content=version.get("content") if version else None, favorite=user["id"] in document.get("favorite_user_ids", []))
 
 
+@router.post("/documents/{document_id}/save", response_model=DocumentResponse)
+async def save_document(document_id: str, payload: DocumentSaveRequest, user=Depends(current_user)):
+    document=await service.document_or_404(document_id,user["id"])
+    result=await repo.save_document(document_id,user["id"],payload.model_dump(),payload.base_version_id)
+    if not result:
+        raise AppError("O documento foi alterado em outra sessão. Recarregue a versão atual antes de salvar.", "document_conflict", 409)
+    updated,version=result
+    await repo.log_event(user["id"],"document.saved",{"document_id":document_id,"version_id":version["id"]})
+    return DocumentResponse(**updated,favorite=user["id"] in updated.get("favorite_user_ids",[]),content=version.get("content"))
+
+
 @router.patch("/documents/{document_id}", response_model=DocumentResponse)
 async def update_document(document_id: str, payload: DocumentUpdateRequest, user=Depends(current_user)):
     await service.document_or_404(document_id, user["id"])
