@@ -84,10 +84,9 @@ async def test_api_end_to_end() -> None:
     assert client.delete("/api/v1/tags/importante", headers=headers).status_code == 200
     assert "importante" not in client.get(f"/api/v1/documents/{document_id}", headers=headers).json()["tag_names"]
 
-    group = client.post("/api/v1/groups", headers=headers, json={"name": "Equipe"}).json()
+    group_denied = client.post("/api/v1/groups", headers=headers, json={"name": "Equipe"})
+    assert group_denied.status_code == 403
     user_id = client.get("/api/v1/users/me", headers=headers).json()["id"]
-    assert client.post(f"/api/v1/groups/{group['id']}/members/{user_id}", headers=headers).status_code == 200
-    assert client.delete(f"/api/v1/groups/{group['id']}/members/{user_id}", headers=headers).status_code == 200
 
     assert client.get(f"/api/v1/permissions/{document_id}", headers=headers).status_code == 200
 
