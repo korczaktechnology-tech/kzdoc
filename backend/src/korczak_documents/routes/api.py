@@ -5,7 +5,7 @@ from ..dependencies import current_user
 from ..errors import AppError, NotFoundError, ValidationError
 from ..models.api import *
 from ..repositories import api as repo
-from ..security import create_session, token_hash, hash_password
+from ..security import create_session, token_hash, hash_password, require_role, role_allows
 from ..services import api as service
 from ..database.connection import get_database
 
@@ -58,8 +58,7 @@ async def update_me(payload: UserUpdateRequest, user=Depends(current_user)):
 
 @router.post("/users", response_model=UserResponse, status_code=201)
 async def admin_create_user(payload: AdminUserCreateRequest, user=Depends(current_user)):
-    if user["role"] != "admin":
-        raise AppError("Acesso administrativo necessário", "forbidden", 403)
+    require_role(user, "manager")
     if await repo.find_user_by_email(payload.email):
         raise AppError("E-mail já cadastrado", "email_already_exists", 409)
     created = await repo.create_user({"name": payload.name, "email": payload.email, "phone": payload.phone, "password_hash": hash_password(payload.password), "role": payload.role})
@@ -410,6 +409,10 @@ async def delete_group(group_id: str, user=Depends(current_user)):
 @router.post("/groups/{group_id}/members/{member_id}")
 async def add_group_member(group_id: str, member_id: str, user=Depends(current_user)):
     group = await get_database()["grupos"].find_one({"id": group_id, "owner_id": user["id"]})
+    if not group and role_allows(user, "manager"):
+        group = await get_database()["grupos"].find_one({"id": group_id})
+    if not group and role_allows(user, "manager"):
+        group = await get_database()["grupos"].find_one({"id": group_id})
     if not group:
         raise NotFoundError("Grupo não encontrado")
     member = await repo.find_user(member_id)
@@ -439,8 +442,8 @@ async def permissions(document_id: str, user=Depends(current_user)):
 @router.put("/permissions/{document_id}")
 async def set_permissions(document_id: str, payload: PermissionRequest, user=Depends(current_user)):
     document = await service.document_or_404(document_id, user["id"], "share")
-    if user["role"] != "admin" and document["owner_id"] != user["id"]:
-        raise AppError("Somente o proprietário ou administrador pode alterar permissões", "forbidden", 403)
+    if not role_allows(user, "manager") and document["owner_id"] != user["id"]:
+        raise AppError("Somente o proprietário, gestor ou administrador pode alterar permissões", "forbidden", 403)
     valid_actions={"read","write","delete","share"}
     if not set(payload.actions).issubset(valid_actions):
         raise ValidationError("Permissão inválida")
@@ -461,8 +464,8 @@ async def folder_permissions(folder_id: str, user=Depends(current_user)):
 @router.put("/folder-permissions/{folder_id}")
 async def set_folder_permissions(folder_id: str, payload: PermissionRequest, user=Depends(current_user)):
     folder=await service.folder_or_404(folder_id,user["id"],"share")
-    if user["role"] != "admin" and folder["owner_id"] != user["id"]:
-        raise AppError("Somente o proprietário ou administrador pode alterar permissões","forbidden",403)
+    if not role_allows(user, "manager") and folder["owner_id"] != user["id"]:
+        raise AppError("Somente o proprietário, gestor ou administrador pode alterar permissões","forbidden",403)
     valid_actions={"read","write","delete","share"}
     if not set(payload.actions).issubset(valid_actions): raise ValidationError("Permissão inválida")
     for uid in payload.user_ids:
