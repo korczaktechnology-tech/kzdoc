@@ -77,12 +77,12 @@ async def users(user=Depends(current_user)):
 
 @router.patch("/users/{user_id}", response_model=UserResponse)
 async def admin_update_user(user_id: str, payload: AdminUserUpdateRequest, user=Depends(current_user)):
-    require_role(user, "admin")
+    require_role(user, "manager")
     target = await repo.find_user(user_id)
     if not target:
         raise NotFoundError("Usuário não encontrado")
     changes = payload.model_dump(exclude_unset=True)
-    if user["role"] == "manager" and (target.get("role") == "admin" or changes.get("role") == "admin" or target.get("role") == "admin" or changes.get("status") == "inactive" and target.get("role") == "admin"):
+    if user["role"] == "manager" and (target.get("role") == "admin" or changes.get("role") == "admin" or changes.get("status") == "inactive" and target.get("role") == "admin"):
         raise AppError("Gestores não podem alterar administradores", "forbidden", 403)
     if not changes:
         return service.clean_user(target)
@@ -400,6 +400,7 @@ async def groups(user=Depends(current_user)):
 
 @router.post("/groups", status_code=201)
 async def create_group(payload: GroupCreateRequest, user=Depends(current_user)):
+    require_role(user, "manager")
     group = {"id": __import__("uuid").uuid4().hex, "owner_id": user["id"], "name": payload.name.strip(), "member_ids": [], "created_at": service.repo.now(), "updated_at": service.repo.now()}
     await get_database()["grupos"].insert_one(group)
     group.pop("_id", None)
@@ -409,6 +410,7 @@ async def create_group(payload: GroupCreateRequest, user=Depends(current_user)):
 
 @router.delete("/groups/{group_id}")
 async def delete_group(group_id: str, user=Depends(current_user)):
+    require_role(user, "manager")
     result=await get_database()["grupos"].delete_one({"id":group_id,"owner_id":user["id"]})
     if result.deleted_count==0: raise NotFoundError("Grupo não encontrado")
     await repo.log_event(user["id"],"group.deleted",{"group_id":group_id})
@@ -416,6 +418,7 @@ async def delete_group(group_id: str, user=Depends(current_user)):
 
 @router.post("/groups/{group_id}/members/{member_id}")
 async def add_group_member(group_id: str, member_id: str, user=Depends(current_user)):
+    require_role(user, "manager")
     group = await get_database()["grupos"].find_one({"id": group_id, "owner_id": user["id"]})
     if not group and role_allows(user, "manager"):
         group = await get_database()["grupos"].find_one({"id": group_id})
@@ -433,6 +436,7 @@ async def add_group_member(group_id: str, member_id: str, user=Depends(current_u
 
 @router.delete("/groups/{group_id}/members/{member_id}")
 async def remove_group_member(group_id: str, member_id: str, user=Depends(current_user)):
+    require_role(user, "manager")
     group = await get_database()["grupos"].find_one({"id": group_id, "owner_id": user["id"]})
     if not group:
         raise NotFoundError("Grupo não encontrado")
