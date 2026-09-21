@@ -75,6 +75,8 @@ async def test_api_end_to_end() -> None:
 
     assert client.post("/api/v1/tags", headers=headers, json={"name": "importante"}).status_code == 201
     assert client.post(f"/api/v1/documents/{document_id}/tags/importante", headers=headers).status_code == 200
+    tagged = client.get(f"/api/v1/documents/{document_id}", headers=headers).json()
+    assert "importante" in tagged["tag_names"]
     assert client.get("/api/v1/tags", headers=headers).status_code == 200
     assert client.delete(f"/api/v1/documents/{document_id}/tags/importante", headers=headers).status_code == 200
     assert client.delete("/api/v1/tags/importante", headers=headers).status_code == 200
