@@ -148,7 +148,7 @@ async def delete_document(document_id: str, user=Depends(current_user)):
 
 @router.post("/documents/{document_id}/restore")
 async def restore_document(document_id: str, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "delete", allow_deleted=True)
     await repo.update_document(document_id, {"status": "active"})
     await repo.log_event(user["id"], "document.restored", {"document_id": document_id})
     return {"message": "Documento restaurado"}
@@ -156,7 +156,7 @@ async def restore_document(document_id: str, user=Depends(current_user)):
 
 @router.delete("/documents/{document_id}/permanent")
 async def permanent_delete_document(document_id: str, user=Depends(current_user)):
-    document = await service.document_or_404(document_id, user["id"])
+    document = await service.document_or_404(document_id, user["id"], "delete", allow_deleted=True)
     if document.get("status") != "deleted":
         raise AppError("Somente documentos na lixeira podem ser excluídos definitivamente.", "document_not_in_trash", 409)
     await get_database()["versoes"].delete_many({"document_id": document_id})
