@@ -49,7 +49,7 @@ async def create_document(owner_id: str, data: dict):
     document = {
         "id": str(uuid4()), "owner_id": owner_id, "name": data["name"].strip(),
         "document_type": data["document_type"].strip(), "description": data.get("description", "").strip(), "folder_id": data.get("folder_id"),
-        "current_version_id": None, "status": "active", "favorite_user_ids": [],
+        "current_version_id": None, "status": "active", "favorite_user_ids": [], "permissions": {"role": "private", "actions": [], "user_ids": [], "group_ids": []},
         "created_at": now(), "updated_at": now(),
     }
     await get_database()["documentos"].insert_one(document)
