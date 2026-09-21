@@ -92,13 +92,13 @@ function App(){
     if(v==='home'||v==='documents')setDocs(await api.documents());
     if(v==='favorites')setDocs(await api.favorites()); if(v==='trash')setDocs(await api.trash()); if(v==='recent')setDocs(await api.recent());
     if(v==='folders'){setFolders(await api.folders());if(showFolderTrash)setDeletedFolders(await api.folderTrash())} if(v==='users'||v==='admin'||v==='permissions'||v==='folder-permissions')setUsers(await api.users()); if(v==='groups'||v==='permissions'||v==='folder-permissions')setGroups(await api.groups());
-    if(v==='audit'){const result=await api.audit({...auditFilters,page:1,page_size:50});setEvents(result.items);setAuditTotal(result.total);if(user.role==='admin'||user.role==='manager')setUsers(await api.users())} if(v==='home')setNotes(await api.notifications());
+    if(v==='audit'){const result=await api.audit({...auditFilters,page:1,page_size:50});setEvents(result.items);setAuditTotal(result.total);if(user?.role==='admin'||user?.role==='manager')setUsers(await api.users())} if(v==='home')setNotes(await api.notifications());
     if(v==='search'&&query.trim())setDocs((await api.search(query)).items); if(v==='search'&&!query.trim())setDocs(await api.documents());
     if(v==='advanced-search'){setFolders(await api.folders());setTags(await api.tags());const result=await api.advancedSearch({...advancedFilters,page:searchPage,page_size:searchPageSize});setDocs(result.items);setSearchTotal(result.total)}
   }catch(x){setError(x instanceof Error?x.message:'Falha ao carregar dados.')}}
   async function openDoc(d:DocumentItem){try{const full=await api.document(d.id);setSelected(full);setVersions(await api.versions(d.id));setTags(await api.tags());await api.open(d.id)}catch(x){setError(x instanceof Error?x.message:'Não foi possível abrir o documento.')}setView('viewer')}
   async function showVersions(v:View){if(!selected)return;setVersions(await api.versions(selected.id));setView(v)}
-  async function showHistory(){if(!selected)return;setHistory((await api.audit(selected.id)).items);setView('history')}
+  async function showHistory(){if(!selected)return;setHistory((await api.audit({document_id:selected.id})).items);setView('history')}
   async function saveEditor(data:{name:string;document_type:string;content:string;base_version_id:string|null}){
     if(!selected)return 'conflict' as const;
     try{
