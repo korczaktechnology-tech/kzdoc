@@ -94,7 +94,7 @@ function App(){
     if(v==='folders'){setFolders(await api.folders());if(showFolderTrash)setDeletedFolders(await api.folderTrash())} if(v==='users'||v==='admin')setUsers(await api.users()); if(v==='groups')setGroups(await api.groups());
     if(v==='audit')setEvents((await api.audit()).items); if(v==='home')setNotes(await api.notifications());
     if(v==='search'&&query.trim())setDocs((await api.search(query)).items); if(v==='search'&&!query.trim())setDocs(await api.documents());
-    if(v==='advanced-search'){const result=await api.advancedSearch({...advancedFilters,page:searchPage,page_size:searchPageSize});setDocs(result.items);setSearchTotal(result.total)}
+    if(v==='advanced-search'){setFolders(await api.folders());setTags(await api.tags());const result=await api.advancedSearch({...advancedFilters,page:searchPage,page_size:searchPageSize});setDocs(result.items);setSearchTotal(result.total)}
   }catch(x){setError(x instanceof Error?x.message:'Falha ao carregar dados.')}}
   async function openDoc(d:DocumentItem){try{const full=await api.document(d.id);setSelected(full);setVersions(await api.versions(d.id));setTags(await api.tags());await api.open(d.id)}catch(x){setError(x instanceof Error?x.message:'Não foi possível abrir o documento.')}setView('viewer')}
   async function showVersions(v:View){if(!selected)return;setVersions(await api.versions(selected.id));setView(v)}
