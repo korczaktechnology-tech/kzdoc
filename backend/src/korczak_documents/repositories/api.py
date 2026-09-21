@@ -48,7 +48,7 @@ async def update_user(user_id: str, changes: dict):
 async def create_document(owner_id: str, data: dict):
     document = {
         "id": str(uuid4()), "owner_id": owner_id, "name": data["name"].strip(),
-        "document_type": data["document_type"].strip(), "folder_id": data.get("folder_id"),
+        "document_type": data["document_type"].strip(), "description": data.get("description", "").strip(), "folder_id": data.get("folder_id"),
         "current_version_id": None, "status": "active", "favorite_user_ids": [],
         "created_at": now(), "updated_at": now(),
     }
