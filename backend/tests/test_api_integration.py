@@ -241,6 +241,21 @@ async def test_api_end_to_end() -> None:
     assert client.post(f"/api/v1/folders/{folder_two['id']}/restore", headers=second_headers, json={}).status_code == 200
     assert folder_two['id'] in [f['id'] for f in client.get("/api/v1/folders", headers=second_headers).json()]
 
+    final_audit = client.get("/api/v1/audit", headers=manager_headers, params={"page": 1, "page_size": 100})
+    assert final_audit.status_code == 200
+    final_items = final_audit.json()["items"]
+    required_events = {
+        "document.created", "document.updated", "document.deleted", "document.restored",
+        "permission.changed", "folder.permission.changed", "admin.user_created",
+        "admin.user_updated", "auth.register", "auth.login", "auth.login_failed",
+        "auth.recovery_requested", "auth.logout",
+    }
+    present = {item["type"] for item in final_items}
+    assert required_events.issubset(present)
+    assert all(item["integrity_valid"] is True for item in final_items if item.get("integrity_hash"))
+    assert all("password" not in str(item.get("payload", {})).casefold() for item in final_items)
+    assert all("token" not in str(item.get("payload", {})).casefold() for item in final_items)
+
     await database["usuarios"].delete_many({})
     await database["documentos"].delete_many({})
     await database["versoes"].delete_many({})
