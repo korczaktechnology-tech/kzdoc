@@ -281,7 +281,7 @@ async def delete_tag(tag_name: str, user=Depends(current_user)):
 
 @router.post("/documents/{document_id}/tags/{tag_name}")
 async def apply_tag(document_id: str, tag_name: str, user=Depends(current_user)):
-    document = await service.document_or_404(document_id, user["id"])
+    document = await service.document_or_404(document_id, user["id"], "write")
     await service.tag_or_404(tag_name, user["id"])
     await get_database()["documentos"].update_one({"id": document_id}, {"$addToSet": {"tag_names": tag_name}})
     await repo.log_event(user["id"], "tag.applied", {"document_id": document_id, "tag": tag_name})
@@ -290,7 +290,7 @@ async def apply_tag(document_id: str, tag_name: str, user=Depends(current_user))
 
 @router.delete("/documents/{document_id}/tags/{tag_name}")
 async def remove_tag(document_id: str, tag_name: str, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "write")
     await get_database()["documentos"].update_one({"id": document_id}, {"$pull": {"tag_names": tag_name}})
     await repo.log_event(user["id"], "tag.removed", {"document_id": document_id, "tag": tag_name})
     return {"message": "Etiqueta removida"}
@@ -298,7 +298,7 @@ async def remove_tag(document_id: str, tag_name: str, user=Depends(current_user)
 
 @router.post("/documents/{document_id}/favorite")
 async def favorite(document_id: str, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "write")
     await get_database()["documentos"].update_one({"id": document_id}, {"$addToSet": {"favorite_user_ids": user["id"]}})
     await repo.log_event(user["id"], "favorite.added", {"document_id": document_id})
     return {"message": "Adicionado aos favoritos"}
@@ -306,7 +306,7 @@ async def favorite(document_id: str, user=Depends(current_user)):
 
 @router.delete("/documents/{document_id}/favorite")
 async def unfavorite(document_id: str, user=Depends(current_user)):
-    await service.document_or_404(document_id, user["id"])
+    await service.document_or_404(document_id, user["id"], "write")
     await get_database()["documentos"].update_one({"id": document_id}, {"$pull": {"favorite_user_ids": user["id"]}})
     await repo.log_event(user["id"], "favorite.removed", {"document_id": document_id})
     return {"message": "Removido dos favoritos"}
