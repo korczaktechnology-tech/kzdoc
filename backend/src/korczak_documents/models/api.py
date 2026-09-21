@@ -58,6 +58,7 @@ class SessionResponse(ResponseModel):
 class DocumentCreateRequest(APIModel):
     name: str = Field(min_length=1, max_length=255)
     document_type: str = Field(min_length=1, max_length=80)
+    description: str = Field(default="", max_length=2000)
     folder_id: str | None = None
     content: str | None = None
 
@@ -72,6 +73,7 @@ class DocumentSaveRequest(APIModel):
 class DocumentUpdateRequest(APIModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     document_type: str | None = Field(default=None, min_length=1, max_length=80)
+    description: str | None = Field(default=None, max_length=2000)
     folder_id: str | None = None
     status: str | None = Field(default=None, min_length=1, max_length=40)
 
@@ -81,6 +83,7 @@ class DocumentResponse(ResponseModel):
     owner_id: str
     name: str
     document_type: str
+    description: str = ""
     folder_id: str | None
     current_version_id: str | None
     status: str
@@ -144,6 +147,13 @@ class NotificationResponse(ResponseModel):
     message: str
     read: bool
     created_at: datetime
+
+
+class SearchResponse(ResponseModel):
+    items: list[DocumentResponse]
+    total: int
+    page: int
+    page_size: int
 
 
 class PaginatedResponse(ResponseModel):
