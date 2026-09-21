@@ -30,6 +30,6 @@ jobs:
       - name: Frontend
         working-directory: frontend
         run: |
-          npm ci
+          npm install
           npm run build
           npm test -- --run
