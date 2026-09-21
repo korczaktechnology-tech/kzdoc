@@ -74,12 +74,15 @@ async def test_api_end_to_end() -> None:
     assert client.delete(f"/api/v1/documents/{document_id}/favorite", headers=headers).status_code == 200
 
     assert client.post("/api/v1/tags", headers=headers, json={"name": "importante"}).status_code == 201
+    assert client.post("/api/v1/tags", headers=headers, json={"name": "importante"}).status_code == 409
     assert client.post(f"/api/v1/documents/{document_id}/tags/importante", headers=headers).status_code == 200
     tagged = client.get(f"/api/v1/documents/{document_id}", headers=headers).json()
     assert "importante" in tagged["tag_names"]
     assert client.get("/api/v1/tags", headers=headers).status_code == 200
     assert client.delete(f"/api/v1/documents/{document_id}/tags/importante", headers=headers).status_code == 200
+    assert client.post(f"/api/v1/documents/{document_id}/tags/importante", headers=headers).status_code == 200
     assert client.delete("/api/v1/tags/importante", headers=headers).status_code == 200
+    assert "importante" not in client.get(f"/api/v1/documents/{document_id}", headers=headers).json()["tag_names"]
 
     group = client.post("/api/v1/groups", headers=headers, json={"name": "Equipe"}).json()
     user_id = client.get("/api/v1/users/me", headers=headers).json()["id"]
@@ -121,6 +124,9 @@ async def test_api_end_to_end() -> None:
     second_headers = {"Authorization": f"Bearer {second.json()['token']}"}
     denied = client.get(f"/api/v1/documents/{document_id}", headers=second_headers)
     assert denied.status_code == 404
+    second_folder = client.post("/api/v1/folders", headers=second_headers, json={"name": "Pasta privada"}).json()
+    cross_owner_move = client.patch(f"/api/v1/documents/{document_id}", headers=headers, json={"folder_id": second_folder["id"]})
+    assert cross_owner_move.status_code == 404
 
     client.delete(f"/api/v1/documents/{document_id}", headers=second_headers)
     own = client.post("/api/v1/documents", headers=second_headers, json={"name": "Lixeira", "document_type": "txt"}).json()
