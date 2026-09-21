@@ -31,7 +31,16 @@ class UserUpdateRequest(APIModel):
     phone: str | None = Field(default=None, max_length=40)
 
 
+class AdminUserCreateRequest(APIModel):
+    name: str = Field(min_length=1, max_length=160)
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=12, max_length=128)
+    phone: str | None = Field(default=None, max_length=40)
+    role: str = Field(default="user", min_length=1, max_length=40)
+
 class AdminUserUpdateRequest(APIModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    phone: str | None = Field(default=None, max_length=40)
     role: str | None = Field(default=None, min_length=1, max_length=40)
     status: str | None = Field(default=None, min_length=1, max_length=40)
 
@@ -138,6 +147,8 @@ class GroupCreateRequest(APIModel):
 class PermissionRequest(APIModel):
     role: str = Field(min_length=1, max_length=40)
     actions: list[str] = Field(default_factory=list)
+    user_ids: list[str] = Field(default_factory=list)
+    group_ids: list[str] = Field(default_factory=list)
 
 
 class NotificationResponse(ResponseModel):
