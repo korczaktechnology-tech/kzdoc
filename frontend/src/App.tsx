@@ -1,6 +1,8 @@
 import {FormEvent, ReactNode, useEffect, useState} from 'react';
 import {api, clearToken, getToken, saveSession, type DocumentItem, type Event, type Folder, type Group, type Notification, type User, type Version} from './services/api';
 import {Button, Icon, Modal, StatePanel} from './components/ui';
+import {Editor, markdownToHtml} from './components/Editor';
+import {ApiError} from './services/api';
 
 type View='home'|'documents'|'viewer'|'editor'|'create'|'history'|'versions'|'folders'|'favorites'|'recent'|'trash'|'search'|'advanced-search'|'profile'|'users'|'groups'|'permissions'|'audit'|'admin'|'settings';
 
@@ -94,7 +96,25 @@ function App(){
   async function openDoc(d:DocumentItem){try{const full=await api.document(d.id);setSelected(full);await api.open(d.id)}catch(x){setError(x instanceof Error?x.message:'Não foi possível abrir o documento.')}setView('viewer')}
   async function showVersions(v:View){if(!selected)return;setVersions(await api.versions(selected.id));setView(v)}
   async function showHistory(){if(!selected)return;setHistory((await api.audit(selected.id)).items);setView('history')}
-  async function editDocument(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!selected)return;const f=new FormData(e.currentTarget);try{const name=String(f.get('name'));const type=String(f.get('type'));const content=String(f.get('content')||'');await api.updateDocument(selected.id,{name,document_type:type});if(content!==String(selected.content||''))await api.createVersion(selected.id,content);setSelected(await api.document(selected.id));setView('viewer')}catch(x){setError(x instanceof Error?x.message:'Não foi possível salvar.')}}
+  async function saveEditor(data:{name:string;document_type:string;content:string;base_version_id:string|null}){
+    if(!selected)return 'conflict' as const;
+    try{
+      const saved=await api.saveDocument(selected.id,data);
+      setSelected(saved);
+      setVersions(await api.versions(selected.id));
+      return 'saved' as const;
+    }catch(error){
+      if(error instanceof ApiError&&error.status===409)return 'conflict' as const;
+      throw error;
+    }
+  }
+  async function handleEditorConflict(){
+    if(!selected)return;
+    const fresh=await api.document(selected.id);
+    setSelected(fresh);
+    setVersions(await api.versions(selected.id));
+    setError('Este documento foi alterado em outra sessão. A versão atual foi carregada; revise seu rascunho antes de salvar novamente.');
+  }
   async function createDocument(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);try{const d=await api.createDocument({name:String(f.get('name')),document_type:String(f.get('type')),folder_id:String(f.get('folder')||'')||null,content:String(f.get('content')||'')});setModal(false);setSelected(await api.document(d.id));setView('viewer')}catch(x){setError(x instanceof Error?x.message:'Não foi possível criar.')}}
   async function restoreVersion(v:Version){if(!selected)return;try{await api.restoreVersion(selected.id,v.id);setSelected(await api.document(selected.id));setVersions(await api.versions(selected.id));setView('viewer')}catch(x){setError(x instanceof Error?x.message:'Não foi possível restaurar a versão.')}}
   if(boot)return <StatePanel title="Iniciando" message="Preparando o Korczak Documents…"/>; if(!user)return <Auth done={setUser}/>;
@@ -124,8 +144,8 @@ function App(){
         {view==='home'&&<Home user={user} docs={docs} notes={notes} onNew={()=>setModal(true)} onSelect={openDoc} onAction={action} setView={setView}/>}
         {(view==='documents'||view==='favorites'||view==='trash'||view==='recent'||view==='search')&&<Section title={title}><DocumentTable docs={docs} onSelect={openDoc} onAction={action}/></Section>}
         {view==='advanced-search'&&<Section title="Pesquisa avançada"><p className="muted">Use filtros avançados para localizar documentos.</p><DocumentTable docs={docs} onSelect={openDoc} onAction={action}/></Section>}
-        {view==='viewer'&&selected&&<Section title={selected.name} actions={<Button variant="secondary" onClick={()=>setView('editor')}>Editar</Button>}><div className="document-toolbar"><Button variant="secondary" onClick={()=>showVersions('versions')}>Versionamento</Button><Button variant="secondary" onClick={showHistory}>Histórico</Button><Button variant="secondary" onClick={async()=>{setPermissions(await api.permissions(selected.id));setView('permissions')}}>Permissões</Button><Button variant="danger" onClick={async()=>{await api.deleteDocument(selected.id);setView('documents');load('documents')}}>Mover para lixeira</Button></div><article className="document-view"><div className="document-meta"><span className="file-type large">{selected.document_type.toUpperCase()}</span><div><strong>{selected.name}</strong><small>Atualizado em {new Date(selected.updated_at).toLocaleString('pt-BR')}</small></div></div><div className="document-content">{selected.content||'Este documento não possui conteúdo textual.'}</div></article></Section>}
-        {view==='editor'&&selected&&<Section title={'Editando: '+selected.name}><form className="editor-form" onSubmit={editDocument}><label>Nome<input name="name" defaultValue={selected.name}/></label><label>Tipo<input name="type" defaultValue={selected.document_type}/></label><textarea name="content" defaultValue={selected.content||''} placeholder="Conteúdo do documento…"/><div><Button type="submit">Salvar alterações</Button><Button variant="secondary" type="button" onClick={()=>setView('viewer')}>Cancelar</Button></div></form></Section>}
+        {view==='viewer'&&selected&&<Section title={selected.name} actions={<Button variant="secondary" onClick={()=>setView('editor')}>Editar documento</Button>}><div className="document-toolbar"><Button variant="secondary" onClick={()=>showVersions('versions')}>Versionamento</Button><Button variant="secondary" onClick={showHistory}>Histórico</Button><Button variant="secondary" onClick={async()=>{setPermissions(await api.permissions(selected.id));setView('permissions')}}>Permissões</Button><Button variant="danger" onClick={async()=>{await api.deleteDocument(selected.id);setView('documents');load('documents')}}>Mover para lixeira</Button></div><article className="document-view"><div className="document-meta"><span className="file-type large">{selected.document_type.toUpperCase()}</span><div><strong>{selected.name}</strong><small>Atualizado em {new Date(selected.updated_at).toLocaleString('pt-BR')}</small></div></div><div className="document-content" dangerouslySetInnerHTML={{__html:markdownToHtml(selected.content||'Este documento não possui conteúdo textual.')}} /></article></Section>}
+        {view==='editor'&&selected&&<Editor document={selected} versions={versions} onSave={saveEditor} onClose={()=>setView('viewer')} onConflict={handleEditorConflict}/>} 
         {view==='history'&&selected&&<Section title="Histórico de atividades">{history.length?<div className="event-list">{history.map(e=><article key={e.id}><strong>{e.type}</strong><span>{new Date(e.created_at).toLocaleString('pt-BR')}</span><code>{JSON.stringify(e.payload)}</code></article>)}</div>:<StatePanel title="Sem histórico" message="Ainda não existem atividades registradas para este documento."/>}</Section>}
         {view==='versions'&&selected&&<Section title="Versionamento">{versions.length?<div className="version-list">{versions.map(v=><article key={v.id}><strong>Versão {v.version_number}</strong><span>{new Date(v.created_at).toLocaleString('pt-BR')}</span><p>{v.content||'Sem conteúdo.'}</p><Button variant="secondary" onClick={()=>restoreVersion(v)}>Restaurar esta versão</Button></article>)}</div>:<StatePanel title="Sem versões" message="Este documento ainda não possui versões."/>}</Section>}
         {view==='folders'&&<Section title="Pastas"><div className="card-grid">{folders.map(f=><article className="mini-card" key={f.id}><span className="folder-icon">□</span><strong>{f.name}</strong><small>{f.parent_id?'Subpasta':'Pasta raiz'}</small><div><Button variant="secondary" onClick={()=>{setEditingFolder(f);setModal(true)}}>Renomear</Button><Button variant="danger" onClick={async()=>{await api.deleteFolder(f.id);load('folders')}}>Excluir</Button></div></article>)}</div></Section>}
