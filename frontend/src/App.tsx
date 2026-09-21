@@ -139,7 +139,7 @@ function App(){
     <div className="main-shell">
       <header className="topbar">
         <div className="mobile-brand"><div className="brand-logo small">KZ</div><strong>KORCZAK <span>DOCUMENTS</span></strong></div>
-        <div className="top-search"><Icon name="search"/><input value={query} onChange={async e=>{const q=e.target.value;setQuery(q);setView('search');if(q.trim())setDocs(await api.search(q));else setDocs(await api.documents())}} placeholder="Buscar documentos, pastas, projetos…"/><kbd>Ctrl + K</kbd></div>
+        <div className="top-search"><Icon name="search"/><input value={query} onChange={async e=>{const q=e.target.value;setQuery(q);setView('search');if(q.trim())setDocs((await api.search(q)).items);else setDocs(await api.documents())}} placeholder="Buscar documentos, pastas, projetos…"/><kbd>Ctrl + K</kbd></div>
         <div className="top-actions"><button aria-label="Notificações" onClick={()=>setView('home')} className="top-icon">♧{notes.some(n=>!n.read)&&<i/>}</button><button aria-label="Alternar tema" onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="top-icon">☾</button><div className="top-user" onClick={()=>setView('profile')}><span className="avatar">{user.name[0]}</span><div><strong>{user.name}</strong><small>{user.role==='admin'?'Administrador':'Usuário'}</small></div><span>⌄</span></div></div>
       </header>
       <main className="content">
