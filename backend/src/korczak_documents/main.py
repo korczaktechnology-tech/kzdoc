@@ -3,10 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config.settings import get_settings
-from .database.collections import ensure_collections
-from .database.connection import close_client, get_database
-from .database.indexes import ensure_indexes
-from .database.seed import seed_initial_data
+from .database.bootstrap import bootstrap_database
+from .database.connection import close_client
 from .errors import AppError, register_exception_handlers
 from .logging import configure_logging, get_logger
 from .rate_limit import enforce_rate_limit
@@ -46,11 +44,7 @@ app.include_router(router, prefix="/api/v1")
 @app.on_event("startup")
 async def initialize_mongodb() -> None:
     """Prepare the complete MongoDB structure before serving requests."""
-    database = get_database()
-    await database.client.admin.command("ping")
-    await ensure_collections(database)
-    await ensure_indexes(database)
-    await seed_initial_data()
+    await bootstrap_database()
     logger.info("MongoDB inicializado: coleções, índices e bootstrap verificados")
 
 
