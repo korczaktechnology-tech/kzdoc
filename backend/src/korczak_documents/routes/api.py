@@ -386,7 +386,8 @@ async def open_document(document_id: str, user=Depends(current_user)):
 
 @router.get("/groups")
 async def groups(user=Depends(current_user)):
-    items = await get_database()["grupos"].find({"owner_id": user["id"]}).sort("name", 1).to_list(length=1000)
+    group_filter = {} if role_allows(user, "manager") else {"owner_id": user["id"]}
+    items = await get_database()["grupos"].find(group_filter).sort("name", 1).to_list(length=1000)
     return [without_mongo_id(item) for item in items]
 
 
