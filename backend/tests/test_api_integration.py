@@ -177,7 +177,7 @@ async def test_api_end_to_end() -> None:
     denied = client.get(f"/api/v1/permissions/{document_id}", headers=second_headers)
     assert denied.status_code == 404
     assert denied.status_code == 404
-    folder_acl_for_second = client.put(f"/api/v1/folder-permissions/{folder['id']}", headers=manager_headers, json={"role":"viewer","actions":["read"],"user_ids":[second["user"]["id"]],"group_ids":[]})
+    folder_acl_for_second = client.put(f"/api/v1/folder-permissions/{folder['id']}", headers=manager_headers, json={"role":"viewer","actions":["read"],"user_ids":[second.json()["user"]["id"]],"group_ids":[]})
     assert folder_acl_for_second.status_code == 200
     assert client.get(f"/api/v1/folders/{folder['id']}", headers=second_headers).status_code == 200
     second_folder = client.post("/api/v1/folders", headers=second_headers, json={"name": "Pasta privada"}).json()
