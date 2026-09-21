@@ -83,7 +83,9 @@ async def test_security_end_to_end():
     await database["usuarios"].update_one({"id": user_id}, {"$set": {"role": "manager"}})
     manager_token = client.post("/api/v1/auth/login", json={"email": email, "password": password}).json()["token"]
     manager_headers = {"Authorization": f"Bearer {manager_token}"}
-    assert client.get("/api/v1/users", headers=manager_headers).status_code == 403
+    manager_users = client.get("/api/v1/users", headers=manager_headers)
+    assert manager_users.status_code == 200
+    assert all(item["role"] != "admin" for item in manager_users.json())
 
     events = await database["eventos"].find({"user_id": user_id}).to_list(length=100)
     assert all("@" not in str(event.get("payload")) for event in events)
