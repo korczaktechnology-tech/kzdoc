@@ -144,7 +144,9 @@ async def test_api_end_to_end() -> None:
         headers=headers,
         json={"role": "editor", "actions": ["read", "write"], "user_ids": [], "group_ids": [group11["id"]]},
     ).status_code == 200
-    manager_headers = {"Authorization": f"Bearer {client.post("/api/v1/auth/login", json={"email": managed_user["email"], "password": "Korczak-Fase11-2026!"}).json()["token"]}"}
+    login11 = client.post("/api/v1/auth/login", json={"email": managed_user["email"], "password": "Korczak-Fase11-2026!"})
+    assert login11.status_code == 200
+    manager_headers = {"Authorization": f"Bearer {login11.json()['token']}"}
     assert client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).status_code == 200
     assert client.post(f"/api/v1/documents/{document_id}/save", headers=manager_headers, json={"name": "Documento atualizado pelo gestor", "document_type": "txt", "content": "ACL escrita", "base_version_id": client.get(f"/api/v1/documents/{document_id}", headers=manager_headers).json()["current_version_id"]}).status_code == 200
     assert client.delete(f"/api/v1/groups/{group11['id']}", headers=headers).status_code == 200
