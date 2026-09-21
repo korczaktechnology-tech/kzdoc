@@ -114,7 +114,7 @@ async def create_folder(owner_id: str, data: dict):
 
 
 async def list_folders(owner_id: str):
-    return await get_database()["pastas"].find({"owner_id": owner_id}).sort("name", 1).to_list(length=1000)
+    return await get_database()["pastas"].find({"owner_id": owner_id, "status": {"$ne": "deleted"}}).sort("name", 1).to_list(length=1000)
 
 
 async def get_folder(folder_id: str):
