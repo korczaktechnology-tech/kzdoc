@@ -118,9 +118,13 @@ async def save_document(document_id: str, payload: DocumentSaveRequest, user=Dep
 async def update_document(document_id: str, payload: DocumentUpdateRequest, user=Depends(current_user)):
     await service.document_or_404(document_id, user["id"])
     changes = payload.model_dump(exclude_unset=True)
+    if "folder_id" in changes and changes["folder_id"] is not None:
+        target_folder = await service.folder_or_404(changes["folder_id"], user["id"])
+        if target_folder.get("status") == "deleted":
+            raise AppError("A pasta de destino está na lixeira.", "folder_deleted", 409)
     document = await repo.update_document(document_id, changes)
     await repo.log_event(user["id"], "document.updated", {"document_id": document_id, "fields": list(changes)})
-    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []))
+    return DocumentResponse(**document, favorite=user["id"] in document.get("favorite_user_ids", []), tag_names=document.get("tag_names", []))
 
 
 @router.delete("/documents/{document_id}")
