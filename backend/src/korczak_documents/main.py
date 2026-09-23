@@ -16,8 +16,21 @@ logger = get_logger(__name__)
 
 app = FastAPI(title=settings.app_name, version="0.3.0", description="API do Korczak Documents.")
 
-allowed_origins = [settings.frontend_url] if settings.frontend_url else []
-app.add_middleware(CORSMiddleware, allow_origins=allowed_origins, allow_credentials=False, allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
+# Produção: o frontend é publicado no GitHub Pages. Mantemos também a
+# origem configurada por ambiente para permitir mudanças de domínio sem
+# quebrar a autenticação no navegador.
+configured_origin = settings.frontend_url.rstrip("/") if settings.frontend_url else ""
+allowed_origins = [origin for origin in {
+    configured_origin,
+    "https://korczaktechnology-tech.github.io",
+} if origin]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
