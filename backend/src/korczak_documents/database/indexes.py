@@ -22,6 +22,7 @@ async def _ensure_index(
     name: str,
     unique: bool = False,
     expire_after_seconds: int | None = None,
+    sparse: bool = False,
 ) -> None:
     """Create an index and replace an older incompatible index on the same keys."""
     requested_keys = dict(keys if isinstance(keys, list) else [(keys, ASCENDING)])
@@ -38,13 +39,14 @@ async def _ensure_index(
             index.get("name") == name
             and bool(index.get("unique", False)) == unique
             and index.get("expireAfterSeconds") == expire_after_seconds
+            and bool(index.get("sparse", False)) == sparse
         )
         if same_options:
             return
 
         await collection.drop_index(index["name"])
 
-    options = {"name": name, "unique": unique}
+    options = {"name": name, "unique": unique, "sparse": sparse}
     if expire_after_seconds is not None:
         options["expireAfterSeconds"] = expire_after_seconds
     await collection.create_index(keys, **options)
@@ -80,6 +82,7 @@ async def ensure_indexes(database) -> None:
             "id",
             name="id_unique",
             unique=True,
+            sparse=True,
         )
 
     # Session records are looked up by the SHA-256 token hash.
