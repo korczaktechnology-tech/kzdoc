@@ -25,7 +25,8 @@ async def _ensure_index(
 ) -> None:
     """Create an index and replace an older incompatible index on the same keys."""
     requested_keys = dict(keys if isinstance(keys, list) else [(keys, ASCENDING)])
-    cursor = await collection.list_indexes()\n    existing = await cursor.to_list(length=None)
+    cursor = await collection.list_indexes()
+    existing = await cursor.to_list(length=None)
 
     for index in existing:
         if index.get("name") == "_id_":
