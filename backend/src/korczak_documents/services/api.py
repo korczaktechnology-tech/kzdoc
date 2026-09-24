@@ -49,6 +49,10 @@ async def login(data):
     if not verify_password(data.password, password_hash):
         await repo.log_event(user_id, "auth.login_failed", {"user_id": user_id, "reason": "invalid_password", "result": "failure"})
         raise AppError("Credenciais inválidas", "invalid_credentials", 401)
+    # Migra automaticamente hashes PBKDF2 legados após uma autenticação válida.
+    from ..security import needs_password_rehash
+    if needs_password_rehash(password_hash):
+        await repo.update_user(user_id, {"password_hash": hash_password(data.password)})
     token, expires_at = await create_session(user_id)
     await repo.log_event(user_id, "auth.login", {"user_id": user_id})
     return token, expires_at, clean_user(user)
