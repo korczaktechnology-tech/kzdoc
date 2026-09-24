@@ -38,16 +38,31 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, encoded: str) -> bool:
+    """Verifica o formato atual e formatos PBKDF2 legados comuns."""
+    if not isinstance(encoded, str) or not encoded:
+        return False
     try:
-        algorithm, iterations, salt_text, digest_text = encoded.split("$", 3)
-        if algorithm != "pbkdf2_sha256":
+        parts = encoded.split("$")
+        if parts[0] == "pbkdf2_sha256" and len(parts) == 4:
+            _, iterations, salt_text, digest_text = parts
+        elif parts[0] == "pbkdf2-sha256" and len(parts) == 4:
+            _, iterations, salt_text, digest_text = parts
+        elif parts[0] == "" and len(parts) == 5 and parts[1] == "pbkdf2-sha256":
+            _, _, iterations, salt_text, digest_text = parts
+        else:
             return False
-        salt = base64.urlsafe_b64decode(salt_text.encode("ascii"))
-        expected = base64.urlsafe_b64decode(digest_text.encode("ascii"))
+        salt = base64.b64decode(salt_text + "=" * (-len(salt_text) % 4))
+        expected = base64.b64decode(digest_text + "=" * (-len(digest_text) % 4))
         actual = pbkdf2_hmac("sha256", password.encode("utf-8"), salt, int(iterations))
         return hmac.compare_digest(actual, expected)
     except (ValueError, TypeError):
         return False
+
+
+def needs_password_rehash(encoded: str) -> bool:
+    return isinstance(encoded, str) and not encoded.startswith(
+        "pbkdf2_sha256$" + str(_PASSWORD_ITERATIONS) + "$"
+    )
 
 
 def create_token() -> str:
