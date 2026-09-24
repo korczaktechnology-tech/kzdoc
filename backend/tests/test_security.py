@@ -21,6 +21,19 @@ def test_rate_limit_blocks_after_threshold():
     reset_rate_limits()
 
 
+def test_legacy_pbkdf2_password_hash_is_accepted():
+    raw = "Korczak-Seguro-2026!"
+    import base64
+    from hashlib import pbkdf2_hmac
+    salt = b"legacy-salt-12345"
+    digest = pbkdf2_hmac("sha256", raw.encode("utf-8"), salt, 120_000)
+    salt_text = base64.b64encode(salt).decode("ascii").rstrip("=")
+    digest_text = base64.b64encode(digest).decode("ascii").rstrip("=")
+    legacy = "pbkdf2-sha256$120000$" + salt_text + "$" + digest_text
+    assert verify_password(raw, legacy)
+    assert not verify_password("outra-senha", legacy)
+
+
 def test_password_hash_is_salted_and_not_plaintext():
     raw = "Senha-Segura-2026!"
     encoded = hash_password(raw)
