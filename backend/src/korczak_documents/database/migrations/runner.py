@@ -43,7 +43,7 @@ async def _migrate_users_to_current_schema(database) -> None:
 
 async def run_migrations() -> None:
     database = get_database()
-    await _migrate_users_to_current_schema()
+    await _migrate_users_to_current_schema(database)
     await database["migrations"].update_one(
         {"version": MIGRATION_VERSION},
         {"$setOnInsert": {"version": MIGRATION_VERSION, "applied_at": datetime.now(timezone.utc)}},
