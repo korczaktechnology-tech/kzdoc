@@ -45,14 +45,22 @@ def verify_password(password: str, encoded: str) -> bool:
         parts = encoded.split("$")
         if parts[0] == "pbkdf2_sha256" and len(parts) == 4:
             _, iterations, salt_text, digest_text = parts
+            # Formato nativo da aplicação: salt e digest em base64 URL-safe.
+            salt = base64.urlsafe_b64decode(salt_text + "=" * (-len(salt_text) % 4))
+            expected = base64.urlsafe_b64decode(digest_text + "=" * (-len(digest_text) % 4))
+        elif parts[0] == "pbkdf2_sha256" and len(parts) == 4:
+            return False
         elif parts[0] == "pbkdf2-sha256" and len(parts) == 4:
             _, iterations, salt_text, digest_text = parts
+            # Formato Passlib: o salt é textual; o checksum é base64.
+            salt = salt_text.encode("utf-8")
+            expected = base64.b64decode(digest_text + "=" * (-len(digest_text) % 4))
         elif parts[0] == "" and len(parts) == 5 and parts[1] == "pbkdf2-sha256":
             _, _, iterations, salt_text, digest_text = parts
+            salt = base64.urlsafe_b64decode(salt_text + "=" * (-len(salt_text) % 4))
+            expected = base64.urlsafe_b64decode(digest_text + "=" * (-len(digest_text) % 4))
         else:
             return False
-        salt = base64.urlsafe_b64decode(salt_text + "=" * (-len(salt_text) % 4))
-        expected = base64.urlsafe_b64decode(digest_text + "=" * (-len(digest_text) % 4))
         actual = pbkdf2_hmac("sha256", password.encode("utf-8"), salt, int(iterations))
         return hmac.compare_digest(actual, expected)
     except (ValueError, TypeError):
