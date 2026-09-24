@@ -38,14 +38,19 @@ async def login(data):
     if not user:
         await repo.log_event(None, "auth.login_failed", {"reason": "unknown_account", "result": "failure"})
         raise AppError("Credenciais inválidas", "invalid_credentials", 401)
-    if user.get("status", "active") != "active":
-        await repo.log_event(user["id"], "auth.login_failed", {"user_id": user["id"], "reason": "account_unavailable", "result": "failure"})
-        raise AppError("Conta indisponível", "account_unavailable", 403)
-    if not verify_password(data.password, user["password_hash"]):
-        await repo.log_event(user["id"], "auth.login_failed", {"user_id": user["id"], "reason": "invalid_password", "result": "failure"})
+    user_id = user.get("id")
+    password_hash = user.get("password_hash")
+    if not user_id or not password_hash:
+        await repo.log_event(None, "auth.login_failed", {"reason": "invalid_account_record", "result": "failure"})
         raise AppError("Credenciais inválidas", "invalid_credentials", 401)
-    token, expires_at = await create_session(user["id"])
-    await repo.log_event(user["id"], "auth.login", {"user_id": user["id"]})
+    if user.get("status", "active") != "active":
+        await repo.log_event(user_id, "auth.login_failed", {"user_id": user_id, "reason": "account_unavailable", "result": "failure"})
+        raise AppError("Conta indisponível", "account_unavailable", 403)
+    if not verify_password(data.password, password_hash):
+        await repo.log_event(user_id, "auth.login_failed", {"user_id": user_id, "reason": "invalid_password", "result": "failure"})
+        raise AppError("Credenciais inválidas", "invalid_credentials", 401)
+    token, expires_at = await create_session(user_id)
+    await repo.log_event(user_id, "auth.login", {"user_id": user_id})
     return token, expires_at, clean_user(user)
 
 
