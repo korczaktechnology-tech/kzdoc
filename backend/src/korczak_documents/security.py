@@ -51,8 +51,8 @@ def verify_password(password: str, encoded: str) -> bool:
             _, _, iterations, salt_text, digest_text = parts
         else:
             return False
-        salt = base64.b64decode(salt_text + "=" * (-len(salt_text) % 4))
-        expected = base64.b64decode(digest_text + "=" * (-len(digest_text) % 4))
+        salt = base64.urlsafe_b64decode(salt_text + "=" * (-len(salt_text) % 4))
+        expected = base64.urlsafe_b64decode(digest_text + "=" * (-len(digest_text) % 4))
         actual = pbkdf2_hmac("sha256", password.encode("utf-8"), salt, int(iterations))
         return hmac.compare_digest(actual, expected)
     except (ValueError, TypeError):
