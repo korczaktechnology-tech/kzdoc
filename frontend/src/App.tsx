@@ -7,7 +7,7 @@ import {chooseLocalFolder, getStorageSelection, saveStorageSelection, storageLab
 
 import {listIOSFiles, getIOSFile, deleteIOSFile, shareIOSFile} from './services/iosFiles';
 import {isIOS} from './iosPwa';
-import {finishCloudOAuth, listCloudFiles, readCloudFile, type CloudFile} from './services/cloudStorage';
+import {finishCloudOAuth, listCloudFiles, readCloudFile, saveCloudFile, type CloudFile} from './services/cloudStorage';
 const nexusLogo = `${import.meta.env.BASE_URL}icons/favicon-nexus.svg?v=2`;
 const NEXUS_RELEASE_FALLBACK = '0.0.0.331';
 const NEXUS_API_VERSION = '0.3.0';
@@ -279,7 +279,7 @@ function App(){
       });
       const full=await api.document(created.id);
       setSelected(full);setVersions(await api.versions(full.id));setTags(await api.tags());
-      try{localStorage.setItem(sourceKey,full.id)}catch{}
+      try{localStorage.setItem(sourceKey,full.id);localStorage.setItem('kz_nexus_drive_source_'+full.id,JSON.stringify({id:file.id,name:file.name,mimeType:file.mimeType}))}catch{}
       setView('editor');
     }catch(e){setError(e instanceof Error?e.message:'Não foi possível importar este arquivo para o editor do Nexus.')}
     finally{setDriveBusy(false)}
@@ -355,6 +355,12 @@ function App(){
       const saved=await api.saveDocument(selected.id,data);
       setSelected(saved);
       setVersions(await api.versions(selected.id));
+      let source:CloudFile|null=null;
+      try{const raw=localStorage.getItem('kz_nexus_drive_source_'+selected.id);if(raw)source=JSON.parse(raw) as CloudFile}catch{}
+      if(source){
+        try{await saveCloudFile(source,data.content)}
+        catch(syncError){setError('Documento salvo no Nexus, mas não foi possível sincronizar com o Google Drive: '+(syncError instanceof Error?syncError.message:'erro desconhecido'))}
+      }
       return 'saved' as const;
     }catch(error){
       if(error instanceof ApiError&&error.status===409)return 'conflict' as const;
