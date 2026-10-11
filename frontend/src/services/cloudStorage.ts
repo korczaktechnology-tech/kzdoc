@@ -42,4 +42,33 @@ export async function listCloudFiles(folderId?:string):Promise<{files:CloudFile[
   }while(pageToken);
   return {files};
 }
+
+export async function readCloudFile(file:CloudFile):Promise<{content:string;document_type:string}>{
+  const docs="application/vnd.google-apps.document";
+  const sheets="application/vnd.google-apps.spreadsheet";
+  const slides="application/vnd.google-apps.presentation";
+  let url:string;
+  let type="txt";
+  if(file.mimeType===docs){
+    url="https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(file.id)+"/export?mimeType="+encodeURIComponent("text/plain");
+  }else if(file.mimeType===sheets){
+    url="https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(file.id)+"/export?mimeType="+encodeURIComponent("text/csv");
+    type="csv";
+  }else if(file.mimeType===slides){
+    url="https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(file.id)+"/export?mimeType="+encodeURIComponent("text/plain");
+  }else{
+    const ext=(file.name.split(".").pop()||"").toLowerCase();
+    const supported=["txt","md","markdown","csv","json","html","htm","xml","rtf","css","js","ts","tsx","jsx","py","yml","yaml","log","svg","ini","toml","sql"];
+    if(!supported.includes(ext)&&!file.mimeType.startsWith("text/")&&file.mimeType!=="application/json"){
+      throw new Error("Este formato ("+(ext||file.mimeType)+") ainda não pode ser convertido em texto pelo editor do Nexus. DOCX, PDF, imagens e outros formatos binários precisam de um importador específico.");
+    }
+    type=ext==="markdown"?"md":(ext||"txt");
+    url="https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(file.id)+"?alt=media";
+  }
+  const response=await request(url);
+  const content=await response.text();
+  if(!content.trim())throw new Error("O arquivo está vazio ou não contém texto editável.");
+  return {content,document_type:type};
+}
+
 export async function createCloudFolder(name:string,parentId?:string){const root=await ensureRootFolder();const parent=parentId||root.id;const r=await request("https://www.googleapis.com/drive/v3/files",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,mimeType:"application/vnd.google-apps.folder",parents:[parent]})});return r.json()}

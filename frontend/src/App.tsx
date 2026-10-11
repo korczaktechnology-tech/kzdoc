@@ -7,7 +7,7 @@ import {chooseLocalFolder, getStorageSelection, saveStorageSelection, storageLab
 
 import {listIOSFiles, getIOSFile, deleteIOSFile, shareIOSFile} from './services/iosFiles';
 import {isIOS} from './iosPwa';
-import {finishCloudOAuth, listCloudFiles, type CloudFile} from './services/cloudStorage';
+import {finishCloudOAuth, listCloudFiles, readCloudFile, type CloudFile} from './services/cloudStorage';
 const nexusLogo = `${import.meta.env.BASE_URL}icons/favicon-nexus.svg?v=2`;
 const NEXUS_RELEASE_FALLBACK = '0.0.0.331';
 const NEXUS_API_VERSION = '0.3.0';
@@ -257,6 +257,33 @@ function App(){
   useEffect(()=>{finishCloudOAuth().then(provider=>{if(provider){const selection={provider,label:storageLabel(provider),connectedAt:new Date().toISOString()};saveStorageSelection(selection);setStorageSelection(selection);}}).catch(e=>setError(e instanceof Error?e.message:'Não foi possível conectar o armazenamento.'))},[]);
   useEffect(()=>{if(user&&!getStorageSelection())setShowStoragePicker(true)},[user]);
   async function refreshDriveFiles(folderId:string|null=driveFolderId){if(getStorageSelection()?.provider!=='google-drive')return;setDriveBusy(true);try{const result=await listCloudFiles(folderId||undefined);setDriveFiles(result.files)}catch(e){setError(e instanceof Error?e.message:'Não foi possível carregar o Google Drive.')}finally{setDriveBusy(false)}}
+  async function openDriveFile(file:CloudFile){
+    setDriveBusy(true);setError('');
+    try{
+      const imported=await readCloudFile(file);
+      const sourceKey='kz_nexus_drive_import_'+file.id;
+      let existingId='';
+      try{existingId=localStorage.getItem(sourceKey)||''}catch{}
+      if(existingId){
+        try{
+          const existing=await api.document(existingId);
+          setSelected(existing);setVersions(await api.versions(existing.id));setTags(await api.tags());setView('editor');
+          return;
+        }catch{try{localStorage.removeItem(sourceKey)}catch{}}
+      }
+      const created=await api.createDocument({
+        name:file.name,
+        document_type:imported.document_type,
+        description:'Importado do Google Drive (ID de origem: '+file.id+'). Alterações salvas aqui ficam no Nexus e não são sincronizadas de volta ao Drive.',
+        content:imported.content
+      });
+      const full=await api.document(created.id);
+      setSelected(full);setVersions(await api.versions(full.id));setTags(await api.tags());
+      try{localStorage.setItem(sourceKey,full.id)}catch{}
+      setView('editor');
+    }catch(e){setError(e instanceof Error?e.message:'Não foi possível importar este arquivo para o editor do Nexus.')}
+    finally{setDriveBusy(false)}
+  }
   useEffect(()=>{if(user&&view==='documents'&&getStorageSelection()?.provider==='google-drive')refreshDriveFiles(null)},[user,view,storageSelection?.provider]);
   useEffect(()=>{if(user)load(view)},[user,view,storageSelection?.provider]);
   useEffect(()=>{
@@ -394,7 +421,7 @@ function App(){
         {view!=='home'&&<div className="page-head"><div><p className="eyebrow">KORCZAK NEXUS</p><h1>{title}</h1></div>{(view==='documents'||view==='folders')&&<Button onClick={()=>{setEditingFolder(null);setModal(true)}}><Icon name="plus"/>{view==='folders'?'Nova pasta':'Novo documento'}</Button>}</div>}
         {error&&<div className="alert alert-error">{error}<button onClick={()=>load(view)}>Tentar novamente</button></div>}
         {view==='home'&&<Home user={user} docs={docs} notes={notes} onNew={()=>setModal(true)} onSelect={openDoc} onAction={action} setView={setView}/>}
-        {(view==='documents'||view==='favorites'||view==='recent'||view==='search')&&<>{<Section title={title} actions={view==='search'?<Button variant="secondary" onClick={()=>setView('advanced-search')}>Pesquisa avançada</Button>:undefined}><DocumentTable docs={docs} onSelect={openDoc} onAction={action}/></Section>}{view==='documents'&&storageSelection?.provider==='google-drive'&&<Section title="Arquivos do Google Drive" actions={<><Button variant="secondary" onClick={()=>{setDriveFolderId(null);setDriveFolderName('Meu Drive');refreshDriveFiles(null)}}>Meu Drive</Button><Button variant="secondary" onClick={()=>refreshDriveFiles() } disabled={driveBusy}>{driveBusy?'Carregando…':'Atualizar'}</Button></>}>{driveFolderId&&<p className="muted">Pasta aberta: {driveFolderName} · <button onClick={()=>{setDriveFolderId(null);setDriveFolderName('Meu Drive');refreshDriveFiles(null)}}>Voltar ao Meu Drive</button></p>}{driveBusy&&<p className="muted">Carregando arquivos do Drive…</p>}<div className="drive-file-list">{driveFiles.map(file=><article className="drive-file-item" key={file.id}><span className="folder-icon"><Icon name={file.mimeType==='application/vnd.google-apps.folder'?'folder':'file'} size={20}/></span><div><strong>{file.name}</strong><small>{file.mimeType==='application/vnd.google-apps.folder'?'Pasta':file.mimeType} {file.modifiedTime?' · Modificado em '+new Date(file.modifiedTime).toLocaleDateString('pt-BR'):''}</small></div>{file.mimeType==='application/vnd.google-apps.folder'?<Button variant="secondary" onClick={()=>{setDriveFolderId(file.id);setDriveFolderName(file.name);refreshDriveFiles(file.id)}}>Abrir pasta</Button>:<Button variant="secondary" onClick={()=>{if(file.webViewLink)window.open(file.webViewLink,'_blank','noopener,noreferrer');else window.open('https://drive.google.com/open?id='+encodeURIComponent(file.id),'_blank','noopener,noreferrer')}}>Abrir</Button>}</article>)}</div>{!driveBusy&&!driveFiles.length&&<StatePanel title="Nenhum arquivo encontrado" message="Não há arquivos nesta pasta ou o Google Drive não retornou itens para esta conta."/>}</Section>}</>}
+        {(view==='documents'||view==='favorites'||view==='recent'||view==='search')&&<>{<Section title={title} actions={view==='search'?<Button variant="secondary" onClick={()=>setView('advanced-search')}>Pesquisa avançada</Button>:undefined}><DocumentTable docs={docs} onSelect={openDoc} onAction={action}/></Section>}{view==='documents'&&storageSelection?.provider==='google-drive'&&<Section title="Arquivos do Google Drive" actions={<><Button variant="secondary" onClick={()=>{setDriveFolderId(null);setDriveFolderName('Meu Drive');refreshDriveFiles(null)}}>Meu Drive</Button><Button variant="secondary" onClick={()=>refreshDriveFiles() } disabled={driveBusy}>{driveBusy?'Carregando…':'Atualizar'}</Button></>}>{driveFolderId&&<p className="muted">Pasta aberta: {driveFolderName} · <button onClick={()=>{setDriveFolderId(null);setDriveFolderName('Meu Drive');refreshDriveFiles(null)}}>Voltar ao Meu Drive</button></p>}{driveBusy&&<p className="muted">Carregando ou importando arquivo…</p>}<p className="muted">Arquivos compatíveis são importados como documentos do Nexus. Alterações salvas no editor não são sincronizadas automaticamente com o Google Drive.</p><div className="drive-file-list">{driveFiles.map(file=><article className="drive-file-item" key={file.id}><span className="folder-icon"><Icon name={file.mimeType==='application/vnd.google-apps.folder'?'folder':'file'} size={20}/></span><div><strong>{file.name}</strong><small>{file.mimeType==='application/vnd.google-apps.folder'?'Pasta':file.mimeType} {file.modifiedTime?' · Modificado em '+new Date(file.modifiedTime).toLocaleDateString('pt-BR'):''}</small></div>{file.mimeType==='application/vnd.google-apps.folder'?<Button variant="secondary" onClick={()=>{setDriveFolderId(file.id);setDriveFolderName(file.name);refreshDriveFiles(file.id)}}>Abrir pasta</Button>:<Button variant="secondary" disabled={driveBusy} onClick={()=>openDriveFile(file)}>Abrir no editor</Button>}</article>)}</div>{!driveBusy&&!driveFiles.length&&<StatePanel title="Nenhum arquivo encontrado" message="Não há arquivos nesta pasta ou o Google Drive não retornou itens para esta conta."/>}</Section>}</>}
         {view==='trash'&&<Section title="Lixeira"><p className="muted">Documentos removidos ficam aqui até serem restaurados ou excluídos definitivamente.</p><DocumentTable docs={docs} onSelect={openDoc} onAction={action} onPermanent={async d=>{if(!window.confirm('Excluir definitivamente este documento? Esta ação não pode ser desfeita.'))return;try{await api.permanentDelete(d.id);await load('trash')}catch(x){setError(x instanceof Error?x.message:'Não foi possível excluir definitivamente.')}}}/></Section>}
         {view==='advanced-search'&&<Section title="Pesquisa avançada">
   <form className="search-panel" onSubmit={e=>{e.preventDefault();setSearchPage(1);load('advanced-search')}}>
