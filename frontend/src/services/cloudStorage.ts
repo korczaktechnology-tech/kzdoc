@@ -11,7 +11,7 @@ async function pkce(){const bytes=crypto.getRandomValues(new Uint8Array(32));con
 let runtimeClientId="";
 function redirectUri(){const configured=String(import.meta.env.VITE_GOOGLE_REDIRECT_URI||"").trim();return configured||location.origin+location.pathname}
 async function clientId(){if(runtimeClientId)return runtimeClientId;const buildId=import.meta.env.VITE_GOOGLE_CLIENT_ID;if(buildId){runtimeClientId=String(buildId).trim();return runtimeClientId}throw new Error("Google Drive não configurado: defina GOOGLE_CLIENT_ID nas variáveis ou secrets do repositório GitHub. O workflow de publicação converte esse valor em VITE_GOOGLE_CLIENT_ID durante o build. Depois, execute novamente a publicação do GitHub Pages.");}
-async function cfg(){const id=await clientId();return{clientId:id,auth:"https://accounts.google.com/o/oauth2/v2/auth",api:(import.meta.env.VITE_API_BASE_URL||"https://kzdoc.onrender.com").replace(/\/$/,""),scope:"openid email profile https://www.googleapis.com/auth/drive.readonly"}}
+async function cfg(){const id=await clientId();return{clientId:id,auth:"https://accounts.google.com/o/oauth2/v2/auth",api:(import.meta.env.VITE_API_BASE_URL||"https://kzdoc.onrender.com").replace(/\/$/,""),scope:"openid email profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/documents"}}
 export async function connectCloud(){const c=await cfg();if(!c.clientId)throw new Error("Google Drive ainda não possui Client ID configurado na NexusAPI.");const{verifier,challenge}=await pkce();const state=b64url(crypto.getRandomValues(new Uint8Array(24)));sessionStorage.setItem("nexus_oauth",JSON.stringify({provider:"google-drive",state,verifier}));const url=new URL(c.auth);url.searchParams.set("client_id",c.clientId);url.searchParams.set("response_type","code");url.searchParams.set("redirect_uri",redirectUri());url.searchParams.set("scope",c.scope);url.searchParams.set("state",state);url.searchParams.set("code_challenge",challenge);url.searchParams.set("code_challenge_method","S256");url.searchParams.set("access_type","offline");url.searchParams.set("prompt","consent");location.assign(url.toString())}
 export async function finishCloudOAuth(){const q=new URLSearchParams(location.search);const oauthError=q.get("error");if(oauthError){sessionStorage.removeItem("nexus_oauth");history.replaceState({},document.title,location.pathname);throw new Error(oauthError==="access_denied"?"A autorização do Google Drive foi cancelada.":"O Google recusou a autorização do Drive: "+oauthError)}const code=q.get("code"),state=q.get("state");if(!code&&!state)return null;if(!code||!state)throw new Error("Resposta OAuth incompleta do Google Drive. Confira a URL de redirecionamento autorizada no Google Cloud Console.");let pending:null|{provider:CloudProvider;state:string;verifier:string}=null;try{pending=JSON.parse(sessionStorage.getItem("nexus_oauth")||"null")}catch{}if(!pending||pending.state!==state||pending.provider!=="google-drive")throw new Error("A sessão de autorização do Google Drive não confere. Recarregue o Nexus e tente conectar novamente.");const c=await cfg();if(!c.clientId)throw new Error("Google Drive ainda não possui Client ID configurado na NexusAPI.");const r=await fetch(c.api+"/api/v1/oauth/google/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,redirect_uri:redirectUri(),code_verifier:pending.verifier})});if(!r.ok){let detail="";try{const d=await r.json();detail=String(d.detail||d.error?.message||d.error_description||d.error||"")}catch{}throw new Error("Falha ao trocar o código OAuth por token"+(detail?": "+detail:"")+". Confira GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no Render e a URL de redirecionamento no Google Cloud Console.")}const data=await r.json();if(!data.access_token)throw new Error("O Google não retornou access_token. Verifique o consentimento OAuth e o projeto Google Cloud.");const session={provider:"google-drive" as const,accessToken:data.access_token,refreshToken:data.refresh_token,expiresAt:Date.now()+Number(data.expires_in||3600)*1000};const all=read();all["google-drive"]=session;write(all);sessionStorage.removeItem("nexus_oauth");history.replaceState({},document.title,location.pathname);return"google-drive" as const}
 async function refresh(s:CloudSession){if(!s.refreshToken)return s;const c=await cfg();const r=await fetch(c.api+"/api/v1/oauth/google/refresh",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refreshToken})});if(!r.ok){disconnectCloud("google-drive");throw new Error("A autorização do Google Drive expirou ou o servidor OAuth não está configurado. Conecte a conta novamente.")}const data=await r.json();const next={...s,accessToken:data.access_token,refreshToken:data.refresh_token||s.refreshToken,expiresAt:Date.now()+Number(data.expires_in||3600)*1000};const all=read();all["google-drive"]=next;write(all);return next}
@@ -69,6 +69,34 @@ export async function readCloudFile(file:CloudFile):Promise<{content:string;docu
   const content=await response.text();
   if(!content.trim())throw new Error("O arquivo está vazio ou não contém texto editável.");
   return {content,document_type:type};
+}
+
+
+export async function saveCloudFile(file:CloudFile,content:string):Promise<void>{
+  if(!content.trim())throw new Error("O documento não pode ser salvo vazio.");
+  const docs="application/vnd.google-apps.document";
+  const sheets="application/vnd.google-apps.spreadsheet";
+  const slides="application/vnd.google-apps.presentation";
+  if(file.mimeType===docs){
+    const response=await request("https://docs.googleapis.com/v1/documents/"+encodeURIComponent(file.id));
+    const document=await response.json();
+    const endIndex=Number(document.body?.content?.[document.body.content.length-1]?.endIndex||1);
+    const requests:any[]=[];
+    if(endIndex>2)requests.push({deleteContentRange:{range:{startIndex:1,endIndex:endIndex-1}}});
+    if(content)requests.push({insertText:{location:{index:1},text:content.replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ")}});
+    if(!requests.length)return;
+    await request("https://docs.googleapis.com/v1/documents/"+encodeURIComponent(file.id)+":batchUpdate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({requests})});
+    return;
+  }
+  if(file.mimeType===sheets||file.mimeType===slides){
+    throw new Error("A cópia do Nexus foi salva, mas a sincronização deste arquivo nativo do Google ainda não está disponível. Planilhas e apresentações precisam de sincronizadores próprios.");
+  }
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  const supported=["txt","md","markdown","csv","json","html","htm","xml","rtf","css","js","ts","tsx","jsx","py","yml","yaml","log","svg","ini","toml","sql"];
+  if(!supported.includes(ext)&&!file.mimeType.startsWith("text/")&&file.mimeType!=="application/json"){
+    throw new Error("A cópia do Nexus foi salva, mas este formato não pode ser sincronizado diretamente.");
+  }
+  await request("https://www.googleapis.com/upload/drive/v3/files/"+encodeURIComponent(file.id)+"?uploadType=media",{method:"PATCH",headers:{"Content-Type":file.mimeType.startsWith("text/")?file.mimeType:"text/plain"},body:content});
 }
 
 export async function createCloudFolder(name:string,parentId?:string){const root=await ensureRootFolder();const parent=parentId||root.id;const r=await request("https://www.googleapis.com/drive/v3/files",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,mimeType:"application/vnd.google-apps.folder",parents:[parent]})});return r.json()}
